@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Debt Tracker">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<title>Debt Payoff & Guilt-Free Spending Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#243146; --border:#334155;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#34d399; --accent2:#22d3ee;
+    --warn:#f87171; --warnbg:#3f1d1d; --gold:#fbbf24;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#0f172a,#111827);
+    color:var(--text); margin:0; padding:20px 14px 60px; line-height:1.4;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  h1{font-size:1.4rem;margin:0 0 4px;}
+  .subtitle{color:var(--muted);margin:0 0 16px;font-size:0.9rem;}
+  .section-label{
+    display:flex; align-items:center; gap:10px; margin:32px 0 14px; font-size:0.78rem; font-weight:800;
+    color:var(--accent2); text-transform:uppercase; letter-spacing:0.08em;
+  }
+  .section-label::after{content:''; flex:1; height:1px; background:var(--border);}
+  .section-label:first-of-type{margin-top:8px;}
+  .section-hint{color:var(--muted); font-size:0.85rem; margin:-8px 0 16px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:820px){.grid{grid-template-columns:1fr;}}
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:14px;
+    padding:18px 18px; margin-bottom:18px;
+  }
+  .panel h2{font-size:1.02rem;margin:0 0 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  label{display:block;font-size:0.8rem;color:var(--muted);margin-bottom:4px;margin-top:12px;}
+  label:first-child{margin-top:0;}
+  input[type=text], input[type=number], input[type=date], select{
+    width:100%; padding:11px 10px; border-radius:8px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--text); font-size:16px; font-family:inherit;
+  }
+  select{appearance:auto;}
+  input[type=date]{color-scheme:dark;}
+  input:focus, select:focus{outline:2px solid var(--accent2);outline-offset:1px;}
+  .row{display:flex;gap:10px;}
+  .row > div{flex:1; min-width:0;}
+  @media(max-width:480px){
+    .row{flex-direction:column; gap:0;}
+    .expense-row3{grid-template-columns:1fr !important;}
+  }
+  .toggle{
+    display:flex; background:var(--panel2); border-radius:10px; padding:4px; border:1px solid var(--border);
+  }
+  .toggle button{
+    flex:1; padding:10px 8px; min-height:44px; border:none; background:transparent; color:var(--muted); border-radius:7px;
+    cursor:pointer; font-size:0.9rem; font-weight:600; -webkit-tap-highlight-color:transparent;
+  }
+  .toggle button.active{background:var(--accent); color:#052e1c;}
+  .card-item{
+    background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:14px 44px 14px 14px; margin-bottom:12px;
+    position:relative;
+  }
+  .card-item .remove{
+    position:absolute; top:8px; right:8px; background:none; border:none; color:var(--muted);
+    cursor:pointer; font-size:1.2rem; line-height:1; width:36px; height:36px; display:flex;
+    align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent;
+  }
+  .card-item .remove:hover, .card-item .remove:active{color:var(--warn);}
+  .add-card-btn, .primary-btn{
+    background:var(--accent); color:#052e1c; border:none; border-radius:9px; padding:12px 16px; min-height:44px;
+    font-weight:700; cursor:pointer; font-size:0.95rem; width:100%; margin-top:6px; -webkit-tap-highlight-color:transparent;
+  }
+  .add-card-btn:hover, .primary-btn:hover, .add-card-btn:active, .primary-btn:active{filter:brightness(1.08);}
+  .toolbar{display:flex; gap:10px; margin-bottom:8px; flex-wrap:wrap; align-items:center;}
+  .toolbar-btn{
+    background:var(--panel2); color:var(--text); border:1px solid var(--border); border-radius:9px;
+    padding:12px 16px; min-height:44px; font-weight:600; cursor:pointer; font-size:0.9rem; display:inline-flex;
+    align-items:center; gap:6px; -webkit-tap-highlight-color:transparent;
+  }
+  .toolbar-btn:hover, .toolbar-btn:active{border-color:var(--accent2); color:var(--accent2);}
+  @media(max-width:600px){
+    .toolbar-btn{flex:1 1 auto; justify-content:center;}
+  }
+  .toolbar-note{color:var(--muted); font-size:0.75rem;}
+  .result-hero{
+    background:linear-gradient(135deg,#064e3b,#065f46);
+    border:1px solid #10b981; border-radius:16px; padding:22px; text-align:center; margin-bottom:20px;
+  }
+  .result-hero .amount{font-size:2.3rem;font-weight:800;color:var(--accent);}
+  .result-hero .label{color:#a7f3d0;font-size:0.9rem;margin-top:4px;}
+  .breakdown{
+    display:flex; justify-content:center; gap:18px; margin-top:14px; flex-wrap:wrap; font-size:0.82rem; color:#d1fae5;
+  }
+  .breakdown div span{display:block;font-weight:700;color:#fff;font-size:1rem;}
+  .warning{
+    background:var(--warnbg); border:1px solid var(--warn); color:#fecaca; border-radius:10px;
+    padding:12px 14px; margin-bottom:16px; font-size:0.85rem;
+  }
+  table{width:100%; border-collapse:collapse; font-size:0.82rem;}
+  th,td{padding:8px 10px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap;}
+  th:first-child,td:first-child{text-align:left;}
+  th{color:var(--muted); font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;}
+  .summary-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:16px;}
+  .summary-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .summary-card .name{font-weight:700;margin-bottom:6px;}
+  .summary-card .stat{font-size:0.8rem;color:var(--muted);display:flex;justify-content:space-between;margin-top:4px;gap:8px;}
+  .summary-card .stat b{color:var(--text);text-align:right;}
+  .overall-summary{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .overall-summary .box{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;flex:1;min-width:150px;text-align:center;}
+  .overall-summary .box .big{font-size:1.3rem;font-weight:800;color:var(--accent2);}
+  .overall-summary .box .small{font-size:0.72rem;color:var(--muted);margin-top:2px;}
+  details{margin-top:10px;}
+  summary{cursor:pointer;color:var(--accent2);font-size:0.85rem;font-weight:600;padding:8px 0;-webkit-tap-highlight-color:transparent;}
+  .schedule-filter-row{display:flex; align-items:center; gap:10px; margin-top:12px; flex-wrap:wrap;}
+  .schedule-filter-row label{margin:0; white-space:nowrap;}
+  .schedule-filter-row select{width:auto; min-width:180px;}
+  .table-scroll{max-height:420px;overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:8px;margin-top:8px;}
+  .footer-note{color:var(--muted);font-size:0.76rem;text-align:center;margin-top:30px;}
+  .badge{display:inline-block;background:var(--gold);color:#3b2a02;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:5px;margin-left:6px;vertical-align:middle;}
+  .computed-line{
+    margin-top:12px; padding-top:10px; border-top:1px dashed var(--border);
+    font-size:0.85rem; color:var(--accent); font-weight:700; display:flex; justify-content:space-between; gap:8px;
+  }
+  .computed-line span.muted{color:var(--muted); font-weight:400;}
+  .expense-item{
+    background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:12px 42px 12px 14px; margin-bottom:10px;
+    position:relative;
+  }
+  .expense-item .remove{
+    position:absolute; top:6px; right:6px; background:none; border:none; color:var(--muted);
+    cursor:pointer; font-size:1.15rem; line-height:1; width:34px; height:34px; display:flex;
+    align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent;
+  }
+  .expense-item .remove:hover, .expense-item .remove:active{color:var(--warn);}
+  .expense-row3{display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="fatalError" style="display:none; background:#7f1d1d; border:1px solid #f87171; color:#fecaca; padding:14px 16px; border-radius:10px; margin-bottom:16px; font-size:0.85rem;"></div>
+
+  <h1>💳 Debt Payoff & Guilt-Free Spending Tracker</h1>
+  <p class="subtitle">Your results are up top; edit your numbers further down and everything updates instantly. Works on desktop and mobile.</p>
+
+  <div class="toolbar">
+    <button type="button" class="toolbar-btn emphasis" id="exportBtn">⬇️ Export to Excel</button>
+    <button type="button" class="toolbar-btn" id="importBtn">⬆️ Import from Excel</button>
+    <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none;">
+    <span class="toolbar-note">Export saves all your data to an .xlsx file. Import loads it back in (needs internet to load the Excel engine once).</span>
+  </div>
+
+  <div id="warnings"></div>
+
+  <!-- ============== DASHBOARD (results) ============== -->
+  <div class="section-label">📊 Your Dashboard</div>
+
+  <div class="result-hero">
+    <div class="label" id="periodLabel">Your guilt-free spending per week</div>
+    <div class="amount" id="guiltFreeAmount">$0</div>
+    <div class="breakdown" id="breakdownRow"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Payoff Schedule <span style="color:var(--muted);font-weight:400;font-size:0.85rem;">(smallest balance paid off first among active cards — snowball method)</span></h2>
+    <div class="overall-summary" id="overallSummary"></div>
+    <div class="summary-cards" id="cardSummaries"></div>
+    <details>
+      <summary id="scheduleToggleLabel">Show full period-by-period schedule</summary>
+      <div class="schedule-filter-row">
+        <label for="scheduleCardFilter">Show schedule for:</label>
+        <select id="scheduleCardFilter"><option value="all">All Cards</option></select>
+      </div>
+      <div class="table-scroll">
+        <table id="scheduleTable">
+          <thead><tr id="scheduleHead"></tr></thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+
+  <!-- ============== INPUTS (your numbers) ============== -->
+  <div class="section-label">✏️ Your Numbers</div>
+  <p class="section-hint">Edit anything below and your dashboard above updates instantly.</p>
+
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h2>Income</h2>
+        <label>Paycheck amount</label>
+        <input type="number" inputmode="decimal" id="paycheckAmount" placeholder="e.g. 950" min="0" step="0.01">
+        <label>How often do you get paid this amount?</label>
+        <div class="toggle" id="paycheckFreqToggle">
+          <button type="button" data-freq="weekly" class="active">Weekly</button>
+          <button type="button" data-freq="biweekly">Bi-weekly (every 2 weeks)</button>
+        </div>
+        <label>Additional income this month <span style="color:var(--muted);font-weight:400;">(bonus, side gig, gift, etc.)</span></label>
+        <input type="number" inputmode="decimal" id="additionalIncome" placeholder="e.g. 300" min="0" step="0.01">
+        <div class="computed-line">
+          <span class="muted">Total monthly income</span>
+          <span id="monthlyIncomeComputed">$0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Monthly Expenses</h2>
+        <div id="expensesList"></div>
+        <button type="button" class="add-card-btn" id="addExpenseBtn">+ Add expense</button>
+        <div class="computed-line">
+          <span class="muted">Total monthly expenses</span>
+          <span id="monthlyExpensesComputed">$0</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Debt Payment Plan</h2>
+        <label>Payment frequency</label>
+        <div class="toggle" id="freqToggle">
+          <button type="button" data-freq="weekly" class="active">Weekly</button>
+          <button type="button" data-freq="biweekly">Bi-weekly (every 2 weeks)</button>
+        </div>
+        <label id="paymentAmountLabel">Total amount you're paying toward all cards each week</label>
+        <input type="number" inputmode="decimal" id="debtPayment" placeholder="e.g. 150" min="0" step="0.01">
+        <div id="minPaymentHint" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="align-self:start;">
+      <h2>Credit Cards <span class="badge">Snowball order</span></h2>
+      <p style="font-size:0.78rem;color:var(--muted);margin:0 0 12px;">Each card's start date controls when it actually begins receiving payments from your plan — a card sits untouched (interest still accrues) until its date arrives, then joins the queue.</p>
+      <div id="cardsList"></div>
+      <button type="button" class="add-card-btn" id="addCardBtn">+ Add another card</button>
+    </div>
+  </div>
+
+  <p class="footer-note">Your data is stored only in this browser (localStorage) — nothing is sent anywhere. Reopen this file anytime and your numbers will still be here.<br>On iPhone: open this file with Safari (Share → Open in Safari, not the Files app preview), then Share → Add to Home Screen for quick access.</p>
+</div>
+
+<script>
+// ---------- GLOBAL SAFETY NET (so mobile failures are visible, not silent) ----------
+function showFatalError(msg){
+  try{
+    const el = document.getElementById('fatalError');
+    if(el){
+      el.style.display = 'block';
+      el.textContent = '⚠️ Something went wrong: ' + msg + '. Try reloading the page. If this keeps happening, screenshot this message.';
+    }
+  }catch(e){ /* nothing more we can do */ }
+}
+window.addEventListener('error', function(e){ showFatalError(e && e.message ? e.message : 'unknown error'); });
+window.addEventListener('unhandledrejection', function(e){ showFatalError(e && e.reason ? String(e.reason) : 'unknown error'); });
+
+const $ = id => document.getElementById(id);
+const fmt = n => (n<0?'-':'') + '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt0 = n => (n<0?'-':'') + '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+const STATE_VERSION = 3;
+let state = loadState();
+let scheduleFilter = 'all';
+
+function defaultState(){
+  return {
+    version: STATE_VERSION,
+    frequency:'weekly',
+    paycheckAmount:'',
+    paycheckFrequency:'weekly',
+    additionalIncome:'',
+    expenses:[
+      {id:1, name:'Rent', amount:1200, frequency:'monthly'},
+      {id:2, name:'Groceries', amount:90, frequency:'weekly'},
+      {id:3, name:'Phone', amount:60, frequency:'monthly'}
+    ],
+    nextExpenseId:4,
+    debtPayment:'',
+    cards:[
+      {id:1,name:'Visa',balance:3000,apr:22.99,minPayment:75,minPaymentFrequency:'monthly',startDate:''},
+      {id:2,name:'Store Card',balance:1200,apr:27.99,minPayment:35,minPaymentFrequency:'monthly',startDate:''}
+    ],
+    nextId:3
+  };
+}
+
+// Storage is wrapped defensively everywhere — some mobile browsers/contexts
+// (e.g. certain local-file setups) restrict localStorage. If it's unavailable,
+// the app still works for the current session, it just won't persist between visits.
+function loadState(){
+  try{
+    const saved = localStorage.getItem('debtTrackerState');
+    if(saved){
+      const parsed = JSON.parse(saved);
+      if(parsed.version === STATE_VERSION) return parsed;
+    }
+  }catch(e){ console.warn('localStorage read failed', e); }
+  return defaultState();
+}
+
+function saveState(){
+  try{
+    localStorage.setItem('debtTrackerState', JSON.stringify(state));
+  }catch(e){
+    console.warn('localStorage write failed (data will not persist this session)', e);
+  }
+}
+
+function num(v){
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+function normalizeFreq(v, fallback){
+  const s = (v==null?'':v.toString()).trim().toLowerCase();
+  if(s.startsWith('bi')) return 'biweekly';
+  if(s.startsWith('week')) return 'weekly';
+  if(s.startsWith('month')) return 'monthly';
+  return fallback;
+}
+
+// Parse a card's chosen start date (YYYY-MM-DD string) as a LOCAL date,
+// falling back to today if blank/invalid — avoids UTC off-by-one issues.
+function parseDateOrToday(dateStr){
+  if(dateStr){
+    const parts = dateStr.split('-');
+    if(parts.length===3){
+      const y = parseInt(parts[0],10), m = parseInt(parts[1],10), d = parseInt(parts[2],10);
+      const dt = new Date(y, m-1, d);
+      if(!isNaN(dt.getTime())) return dt;
+    }
+  }
+  return new Date();
+}
+
+// Normalize a value coming back from an imported Excel file (could be a
+// JS Date object, an Excel date string, or empty) into "YYYY-MM-DD" for
+// the <input type="date"> field.
+function toDateInputValue(v){
+  if(!v) return '';
+  if(typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v.trim())) return v.trim();
+  let d;
+  if(v instanceof Date){ d = v; }
+  else {
+    d = new Date(v);
+    if(isNaN(d.getTime())) return '';
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// annualized amount given a value + frequency (weekly/biweekly/monthly)
+function toAnnual(amount, freq){
+  const a = num(amount);
+  if(freq==='weekly') return a*52;
+  if(freq==='biweekly') return a*26;
+  return a*12; // monthly
+}
+function toMonthly(amount, freq){ return toAnnual(amount, freq)/12; }
+function periodsPerYear(freq){ return freq==='weekly' ? 52 : 26; }
+function toPeriod(amount, freq, ppy){ return toAnnual(amount, freq)/ppy; }
+
+// ---------- FULL RENDER (structural: initial load, add/remove rows, frequency toggle) ----------
+
+function renderInputs(){
+  $('paycheckAmount').value = state.paycheckAmount;
+  $('additionalIncome').value = state.additionalIncome;
+  $('debtPayment').value = state.debtPayment;
+
+  document.querySelectorAll('#paycheckFreqToggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.freq === state.paycheckFrequency);
+  });
+  document.querySelectorAll('#freqToggle button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.freq === state.frequency);
+  });
+  $('paymentAmountLabel').textContent = state.frequency==='weekly'
+    ? "Total amount you're paying toward all cards each week"
+    : "Total amount you're paying toward all cards every 2 weeks";
+
+  // expenses list
+  const expList = $('expensesList');
+  expList.innerHTML = '';
+  state.expenses.forEach(exp=>{
+    const div = document.createElement('div');
+    div.className = 'expense-item';
+    div.innerHTML = `
+      <button type="button" class="remove" data-id="${exp.id}" title="Remove expense">✕</button>
+      <div class="expense-row3">
+        <div>
+          <label>Expense name</label>
+          <input type="text" data-field="name" data-id="${exp.id}" value="${exp.name}">
+        </div>
+        <div>
+          <label>Amount</label>
+          <input type="number" inputmode="decimal" data-field="amount" data-id="${exp.id}" value="${exp.amount}" min="0" step="0.01">
+        </div>
+        <div>
+          <label>Frequency</label>
+          <select data-field="frequency" data-id="${exp.id}">
+            <option value="weekly" ${exp.frequency==='weekly'?'selected':''}>Weekly</option>
+            <option value="biweekly" ${exp.frequency==='biweekly'?'selected':''}>Bi-weekly</option>
+            <option value="monthly" ${exp.frequency==='monthly'?'selected':''}>Monthly</option>
+          </select>
+        </div>
+      </div>
+    `;
+    expList.appendChild(div);
+  });
+
+  // credit cards
+  const list = $('cardsList');
+  list.innerHTML = '';
+  state.cards.forEach(card=>{
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.innerHTML = `
+      <button type="button" class="remove" data-id="${card.id}" title="Remove card">✕</button>
+      <label>Card name</label>
+      <input type="text" data-field="name" data-id="${card.id}" value="${card.name}">
+      <div class="row">
+        <div>
+          <label>Balance</label>
+          <input type="number" inputmode="decimal" data-field="balance" data-id="${card.id}" value="${card.balance}" min="0" step="0.01">
+        </div>
+        <div>
+          <label>Interest rate (APR %)</label>
+          <input type="number" inputmode="decimal" data-field="apr" data-id="${card.id}" value="${card.apr}" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Minimum payment amount</label>
+          <input type="number" inputmode="decimal" data-field="minPayment" data-id="${card.id}" value="${card.minPayment}" min="0" step="0.01">
+        </div>
+        <div>
+          <label>Minimum payment frequency</label>
+          <select data-field="minPaymentFrequency" data-id="${card.id}">
+            <option value="weekly" ${card.minPaymentFrequency==='weekly'?'selected':''}>Weekly</option>
+            <option value="biweekly" ${card.minPaymentFrequency==='biweekly'?'selected':''}>Bi-weekly</option>
+            <option value="monthly" ${card.minPaymentFrequency==='monthly'?'selected':''}>Monthly</option>
+          </select>
+        </div>
+      </div>
+      <label>Start date for this card <span style="color:var(--muted);font-weight:400;">(defaults to today — card gets no payments before this date)</span></label>
+      <input type="date" data-field="startDate" data-id="${card.id}" value="${card.startDate || ''}">
+    `;
+    list.appendChild(div);
+  });
+
+  refreshComputedDisplays();
+}
+
+// ---------- LIGHTWEIGHT REFRESH (no DOM rebuild — safe to call on every keystroke) ----------
+
+function refreshComputedDisplays(){
+  const monthlyIncome = toMonthly(state.paycheckAmount, state.paycheckFrequency) + num(state.additionalIncome);
+  $('monthlyIncomeComputed').textContent = fmt(monthlyIncome);
+
+  const monthlyExpenses = state.expenses.reduce((s,e)=>s+toMonthly(e.amount,e.frequency),0);
+  $('monthlyExpensesComputed').textContent = fmt(monthlyExpenses);
+
+  const ppy = periodsPerYear(state.frequency);
+  const minTotal = state.cards.reduce((s,c)=>s+toPeriod(c.minPayment, c.minPaymentFrequency, ppy),0);
+  $('minPaymentHint').textContent = `If every card were active at the same time, minimum payments would total ${fmt(minTotal)} per ${state.frequency==='weekly'?'week':'2 weeks'}. Cards with a future start date don't count against your budget until they join.`;
+}
+
+function onFieldChange(){
+  saveState();
+  refreshComputedDisplays();
+  compute();
+}
+
+function attachInputListeners(){
+  $('paycheckAmount').addEventListener('input', e=>{state.paycheckAmount=e.target.value; onFieldChange();});
+  $('additionalIncome').addEventListener('input', e=>{state.additionalIncome=e.target.value; onFieldChange();});
+  $('debtPayment').addEventListener('input', e=>{state.debtPayment=e.target.value; onFieldChange();});
+
+  document.querySelectorAll('#paycheckFreqToggle button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.paycheckFrequency = b.dataset.freq;
+      renderInputs();
+      attachAllRowListeners();
+      saveState();
+      compute();
+    });
+  });
+
+  document.querySelectorAll('#freqToggle button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.frequency = b.dataset.freq;
+      renderInputs();
+      attachAllRowListeners();
+      saveState();
+      compute();
+    });
+  });
+
+  $('addExpenseBtn').addEventListener('click', ()=>{
+    state.expenses.push({id:state.nextExpenseId++, name:'New expense', amount:0, frequency:'monthly'});
+    renderInputs();
+    attachAllRowListeners();
+    saveState();
+    compute();
+  });
+
+  $('addCardBtn').addEventListener('click', ()=>{
+    state.cards.push({id:state.nextId++, name:'New Card', balance:0, apr:20, minPayment:25, minPaymentFrequency:'monthly', startDate:''});
+    renderInputs();
+    attachAllRowListeners();
+    saveState();
+    compute();
+  });
+
+  $('scheduleCardFilter').addEventListener('change', e=>{
+    scheduleFilter = e.target.value;
+    compute();
+  });
+
+  $('exportBtn').addEventListener('click', exportToExcel);
+  $('importBtn').addEventListener('click', ()=> $('importFile').click());
+  $('importFile').addEventListener('change', handleImportFile);
+
+  attachAllRowListeners();
+}
+
+function attachAllRowListeners(){
+  attachExpenseListeners();
+  attachCardListeners();
+}
+
+function attachExpenseListeners(){
+  document.querySelectorAll('#expensesList input, #expensesList select').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const id = parseInt(e.target.dataset.id);
+      const field = e.target.dataset.field;
+      const exp = state.expenses.find(x=>x.id===id);
+      if(!exp) return;
+      exp[field] = e.target.value;
+      onFieldChange();
+    });
+  });
+  document.querySelectorAll('#expensesList .remove').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const id = parseInt(e.target.dataset.id);
+      state.expenses = state.expenses.filter(x=>x.id!==id);
+      renderInputs();
+      attachAllRowListeners();
+      saveState();
+      compute();
+    });
+  });
+}
+
+function attachCardListeners(){
+  document.querySelectorAll('#cardsList input, #cardsList select').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const id = parseInt(e.target.dataset.id);
+      const field = e.target.dataset.field;
+      const card = state.cards.find(c=>c.id===id);
+      if(!card) return;
+      card[field] = e.target.value;
+      onFieldChange();
+    });
+  });
+  document.querySelectorAll('#cardsList .remove').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const id = parseInt(e.target.dataset.id);
+      state.cards = state.cards.filter(c=>c.id!==id);
+      renderInputs();
+      attachAllRowListeners();
+      saveState();
+      compute();
+    });
+  });
+}
+
+// ---------- IMPORT / EXPORT ----------
+
+function exportToExcel(){
+  if(typeof XLSX === 'undefined'){
+    alert("The Excel engine hasn't finished loading (it needs an internet connection the first time). Check your connection, reload the page, and try again.");
+    return;
+  }
+  const wbx = XLSX.utils.book_new();
+
+  const settingsRows = [
+    {Field:'Paycheck Amount', Value:num(state.paycheckAmount)},
+    {Field:'Paycheck Frequency', Value:state.paycheckFrequency},
+    {Field:'Additional Income This Month', Value:num(state.additionalIncome)},
+    {Field:'Debt Payment Frequency', Value:state.frequency},
+    {Field:'Total Debt Payment Per Period', Value:num(state.debtPayment)},
+  ];
+  XLSX.utils.book_append_sheet(wbx, XLSX.utils.json_to_sheet(settingsRows), 'Settings');
+
+  const expenseRows = state.expenses.length
+    ? state.expenses.map(e=>({Name:e.name, Amount:num(e.amount), Frequency:e.frequency}))
+    : [{Name:'', Amount:'', Frequency:''}];
+  XLSX.utils.book_append_sheet(wbx, XLSX.utils.json_to_sheet(expenseRows), 'Expenses');
+
+  const cardRows = state.cards.length
+    ? state.cards.map(c=>({Name:c.name, Balance:num(c.balance), APR:num(c.apr), MinimumPayment:num(c.minPayment), MinimumPaymentFrequency:c.minPaymentFrequency, StartDate:c.startDate||''}))
+    : [{Name:'', Balance:'', APR:'', MinimumPayment:'', MinimumPaymentFrequency:'', StartDate:''}];
+  XLSX.utils.book_append_sheet(wbx, XLSX.utils.json_to_sheet(cardRows), 'Cards');
+
+  XLSX.writeFile(wbx, 'Debt_Payoff_Tracker_Data.xlsx');
+}
+
+function handleImportFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  if(typeof XLSX === 'undefined'){
+    alert("The Excel engine hasn't finished loading (it needs an internet connection the first time). Check your connection, reload the page, and try again.");
+    e.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const data = new Uint8Array(evt.target.result);
+      const wbx = XLSX.read(data, {type:'array'});
+
+      if(wbx.SheetNames.includes('Settings')){
+        const rows = XLSX.utils.sheet_to_json(wbx.Sheets['Settings']);
+        const map = {};
+        rows.forEach(r=>{ map[r.Field] = r.Value; });
+        if(map['Paycheck Amount']!==undefined) state.paycheckAmount = map['Paycheck Amount'];
+        if(map['Paycheck Frequency']!==undefined) state.paycheckFrequency = normalizeFreq(map['Paycheck Frequency'],'weekly');
+        if(map['Additional Income This Month']!==undefined) state.additionalIncome = map['Additional Income This Month'];
+        if(map['Debt Payment Frequency']!==undefined) state.frequency = normalizeFreq(map['Debt Payment Frequency'],'weekly');
+        if(map['Total Debt Payment Per Period']!==undefined) state.debtPayment = map['Total Debt Payment Per Period'];
+      }
+
+      if(wbx.SheetNames.includes('Expenses')){
+        const rows = XLSX.utils.sheet_to_json(wbx.Sheets['Expenses']);
+        const filtered = rows.filter(r=>r.Name && r.Name.toString().trim()!=='');
+        state.expenses = filtered.map((r,idx)=>({
+          id: idx+1,
+          name: r.Name.toString(),
+          amount: num(r.Amount),
+          frequency: normalizeFreq(r.Frequency,'monthly')
+        }));
+        state.nextExpenseId = state.expenses.length+1;
+      }
+
+      if(wbx.SheetNames.includes('Cards')){
+        const rows = XLSX.utils.sheet_to_json(wbx.Sheets['Cards']);
+        const filtered = rows.filter(r=>r.Name && r.Name.toString().trim()!=='');
+        state.cards = filtered.map((r,idx)=>({
+          id: idx+1,
+          name: r.Name.toString(),
+          balance: num(r.Balance),
+          apr: num(r.APR),
+          minPayment: num(r.MinimumPayment),
+          minPaymentFrequency: normalizeFreq(r.MinimumPaymentFrequency,'monthly'),
+          startDate: toDateInputValue(r.StartDate)
+        }));
+        state.nextId = state.cards.length+1;
+      }
+
+      scheduleFilter = 'all';
+      saveState();
+      renderInputs();
+      attachAllRowListeners();
+      compute();
+      alert('Import complete — your data has been loaded.');
+    }catch(err){
+      console.error(err);
+      alert("Couldn't read that file. Please make sure it's an .xlsx file exported from this tool.");
+    }
+    e.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------- CALCULATIONS ----------
+
+function computeGuiltFree(){
+  const monthlyIncome = toMonthly(state.paycheckAmount, state.paycheckFrequency) + num(state.additionalIncome);
+  const monthlyExpenses = state.expenses.reduce((s,e)=>s+toMonthly(e.amount,e.frequency),0);
+  const ppy = periodsPerYear(state.frequency);
+  const periodIncome = monthlyIncome * 12 / ppy;
+  const periodExpenses = monthlyExpenses * 12 / ppy;
+  const debtPayment = num(state.debtPayment);
+  const guiltFree = periodIncome - periodExpenses - debtPayment;
+  return {periodIncome, periodExpenses, debtPayment, guiltFree};
+}
+
+// Cards only become "active" (eligible for minimum + snowball extra) once the
+// shared plan clock reaches their own start date. Until then they sit untouched
+// (but still accrue interest) — this lets you sequence cards manually instead of
+// (or on top of) pure smallest-balance-first ordering.
+function simulateSnowball(){
+  const ppy = periodsPerYear(state.frequency);
+  const cards = state.cards
+    .filter(c=>num(c.balance) > 0)
+    .map(c=>({
+      id:c.id, name:c.name || 'Card',
+      balance:num(c.balance), apr:num(c.apr),
+      minPayment: toPeriod(c.minPayment, c.minPaymentFrequency, ppy),
+      startBalance:num(c.balance),
+      startDate: c.startDate || ''
+    }));
+
+  if(cards.length===0){
+    return {
+      cards:[], rows:[], totalPeriods:0, totalInterest:0, payoffMap:{}, activationMap:{},
+      insufficient:false, neverPaysOff:false, minTotal:0, order:[], planAnchorDate:new Date()
+    };
+  }
+
+  // Shared plan clock: the earliest start date set across your cards (today, if none set).
+  const planAnchorDate = new Date(Math.min(...cards.map(c=>parseDateOrToday(c.startDate).getTime())));
+
+  // snowball priority order fixed at start: smallest balance first (tie-break among active cards)
+  const order = [...cards].sort((a,b)=>a.startBalance-b.startBalance).map(c=>c.id);
+  const minTotal = cards.reduce((s,c)=>s+c.minPayment,0); // informational: assumes every card active at once
+  const totalPayment = num(state.debtPayment);
+
+  const rows = [];
+  const payoffMap = {};
+  const activationMap = {};
+  let totalInterest = 0;
+  let period = 0;
+  const maxPeriods = 2000;
+  let insufficient = false;
+
+  while(cards.some(c=>c.balance>0.005) && period < maxPeriods){
+    period++;
+
+    const periodCalendarDate = new Date(planAnchorDate.getTime());
+    periodCalendarDate.setDate(periodCalendarDate.getDate() + (state.frequency==='weekly' ? period*7 : period*14));
+
+    const periodRow = {period, cards:{}, totalPaid:0, totalInterest:0, totalBalance:0};
+    cards.forEach(c=>{
+      periodRow.cards[c.id] = {interest:0, payment:0, balance:c.balance};
+    });
+
+    // determine which cards are active this period (their own start date has arrived)
+    cards.forEach(c=>{
+      c._active = periodCalendarDate.getTime() >= parseDateOrToday(c.startDate).getTime();
+      if(c._active && c.balance>0.005 && activationMap[c.id]===undefined){
+        activationMap[c.id] = period;
+      }
+    });
+
+    // accrue interest — happens regardless of active status, balances don't wait for you
+    cards.forEach(c=>{
+      if(c.balance>0){
+        const interest = c.balance * (c.apr/100/ppy);
+        c.balance += interest;
+        totalInterest += interest;
+        periodRow.totalInterest += interest;
+        periodRow.cards[c.id].interest = interest;
+      }
+    });
+
+    // pay minimums — only for cards that are currently active
+    let minPaidThisPeriod = 0;
+    cards.forEach(c=>{
+      if(c.balance>0 && c._active){
+        const pay = Math.min(c.minPayment, c.balance);
+        c.balance -= pay;
+        minPaidThisPeriod += pay;
+        periodRow.cards[c.id].payment = pay;
+        periodRow.cards[c.id].balance = c.balance;
+      } else {
+        periodRow.cards[c.id].payment = 0;
+        periodRow.cards[c.id].balance = c.balance;
+      }
+    });
+
+    let extra = totalPayment - minPaidThisPeriod;
+    if(extra < 0){ insufficient = true; extra = 0; }
+
+    // waterfall snowball — only among currently-active cards
+    for(const id of order){
+      if(extra<=0) break;
+      const c = cards.find(cc=>cc.id===id);
+      if(!c || c.balance<=0 || !c._active) continue;
+      const pay = Math.min(extra, c.balance);
+      c.balance -= pay;
+      extra -= pay;
+      periodRow.cards[id].payment += pay;
+      periodRow.cards[id].balance = c.balance;
+    }
+
+    cards.forEach(c=>{
+      periodRow.totalPaid += periodRow.cards[c.id].payment;
+      periodRow.totalBalance += c.balance;
+      if(c.balance<=0.005 && payoffMap[c.id]===undefined){
+        payoffMap[c.id] = period;
+      }
+    });
+
+    rows.push(periodRow);
+  }
+
+  const neverPaysOff = cards.some(c=>c.balance>0.005);
+
+  return {
+    cards, rows, totalPeriods:rows.length, totalInterest, payoffMap, activationMap,
+    insufficient, neverPaysOff, minTotal, order, planAnchorDate
+  };
+}
+
+function periodDate(periodsFromNow, freq, baseDate){
+  const d = new Date(baseDate ? baseDate.getTime() : Date.now());
+  const days = freq==='weekly' ? periodsFromNow*7 : periodsFromNow*14;
+  d.setDate(d.getDate()+days);
+  return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+}
+
+function compute(){
+  const gf = computeGuiltFree();
+  const sim = simulateSnowball();
+
+  // warnings
+  const warnDiv = $('warnings');
+  warnDiv.innerHTML = '';
+  const warnings = [];
+  if(sim.insufficient){
+    warnings.push(`At some point in your plan, the combined minimum payments of your currently-active cards go over your total payment of ${fmt(num(state.debtPayment))} per ${state.frequency==='weekly'?'week':'2 weeks'}. Increase your payment, or stagger your cards' start dates so fewer are active at the same time.`);
+  }
+  if(sim.neverPaysOff){
+    warnings.push(`At this payment amount, at least one card won't be paid off within 2000 periods (~${state.frequency==='weekly'?'38 years':'77 years'}). Your payment may not even be covering the interest — try increasing it.`);
+  }
+  if(gf.guiltFree < 0){
+    warnings.push(`Your guilt-free spending is negative (${fmt(gf.guiltFree)}). Your income doesn't currently cover your expenses + debt payment for this period.`);
+  }
+  warnings.forEach(w=>{
+    const el = document.createElement('div');
+    el.className='warning';
+    el.textContent = '⚠️ ' + w;
+    warnDiv.appendChild(el);
+  });
+
+  // hero
+  const perLabel = state.frequency==='weekly' ? 'week' : '2 weeks';
+  $('periodLabel').textContent = `Your guilt-free spending per ${perLabel}`;
+  $('guiltFreeAmount').textContent = fmt(gf.guiltFree);
+  $('guiltFreeAmount').style.color = gf.guiltFree<0 ? 'var(--warn)' : 'var(--accent)';
+  $('breakdownRow').innerHTML = `
+    <div>Income <span>${fmt(gf.periodIncome)}</span></div>
+    <div>− Expenses <span>${fmt(gf.periodExpenses)}</span></div>
+    <div>− Debt payment <span>${fmt(gf.debtPayment)}</span></div>
+    <div>= Guilt-free <span>${fmt(gf.guiltFree)}</span></div>
+  `;
+
+  // overall summary
+  const overall = $('overallSummary');
+  if(sim.cards.length===0){
+    overall.innerHTML = `<div class="box"><div class="big">—</div><div class="small">Add a credit card to see your payoff schedule</div></div>`;
+  } else {
+    const debtFreeDate = sim.neverPaysOff ? '—' : periodDate(sim.totalPeriods, state.frequency, sim.planAnchorDate);
+    const monthsEq = state.frequency==='weekly' ? (sim.totalPeriods/52*12) : (sim.totalPeriods/26*12);
+    overall.innerHTML = `
+      <div class="box"><div class="big">${sim.neverPaysOff?'—':sim.totalPeriods}</div><div class="small">${state.frequency==='weekly'?'weeks':'2-week periods'} to debt-free ${sim.neverPaysOff?'':`(~${monthsEq.toFixed(1)} months)`}</div></div>
+      <div class="box"><div class="big">${debtFreeDate}</div><div class="small">Estimated debt-free date</div></div>
+      <div class="box"><div class="big">${fmt0(sim.totalInterest)}</div><div class="small">Total interest paid</div></div>
+    `;
+  }
+
+  // per-card summaries, in snowball order
+  const cardSummaries = $('cardSummaries');
+  cardSummaries.innerHTML = '';
+  sim.order.forEach((id,idx)=>{
+    const c = sim.cards.find(cc=>cc.id===id);
+    const payoffPeriod = sim.payoffMap[id];
+    const activationPeriod = sim.activationMap[id];
+    const startsLabel = activationPeriod
+      ? periodDate(activationPeriod, state.frequency, sim.planAnchorDate)
+      : parseDateOrToday(c.startDate).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+    const div = document.createElement('div');
+    div.className = 'summary-card';
+    div.innerHTML = `
+      <div class="name">#${idx+1} ${c.name}</div>
+      <div class="stat"><span>Starting balance</span><b>${fmt(c.startBalance)}</b></div>
+      <div class="stat"><span>APR</span><b>${c.apr}%</b></div>
+      <div class="stat"><span>Min payment (per ${perLabel})</span><b>${fmt(c.minPayment)}</b></div>
+      <div class="stat"><span>Starts receiving payments</span><b>${startsLabel}</b></div>
+      <div class="stat"><span>Paid off</span><b>${payoffPeriod ? `${perLabel} ${payoffPeriod} (${periodDate(payoffPeriod,state.frequency,sim.planAnchorDate)})` : 'not within range'}</b></div>
+    `;
+    cardSummaries.appendChild(div);
+  });
+
+  // schedule card filter dropdown — rebuild options but preserve selection
+  const filterSelect = $('scheduleCardFilter');
+  const validValues = ['all', ...sim.order.map(String)];
+  if(!validValues.includes(String(scheduleFilter))) scheduleFilter = 'all';
+  filterSelect.innerHTML = '<option value="all">All Cards</option>' + sim.order.map(id=>{
+    const c = sim.cards.find(cc=>cc.id===id);
+    return `<option value="${id}">${c.name}</option>`;
+  }).join('');
+  filterSelect.value = scheduleFilter;
+
+  // full schedule table
+  const head = $('scheduleHead');
+  const body = $('scheduleBody');
+  head.innerHTML = '';
+  body.innerHTML = '';
+
+  if(sim.cards.length===0){
+    $('scheduleToggleLabel').textContent = `Show full period-by-period schedule`;
+  } else if(scheduleFilter === 'all'){
+    $('scheduleToggleLabel').textContent = `Show full period-by-period schedule — all cards (${sim.totalPeriods} ${perLabel === 'week' ? 'weeks' : 'periods'})`;
+    let h = `<th>${state.frequency==='weekly'?'Week':'Period'}</th><th>Date</th>`;
+    sim.order.forEach(id=>{
+      const c = sim.cards.find(cc=>cc.id===id);
+      h += `<th>${c.name} payment</th><th>${c.name} balance</th>`;
+    });
+    h += `<th>Total remaining</th>`;
+    head.innerHTML = h;
+
+    const frag = document.createDocumentFragment();
+    sim.rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      let rowHtml = `<td>${r.period}</td><td>${periodDate(r.period, state.frequency, sim.planAnchorDate)}</td>`;
+      sim.order.forEach(id=>{
+        const cd = r.cards[id] || {payment:0,balance:0};
+        rowHtml += `<td>${fmt(cd.payment)}</td><td>${fmt(cd.balance)}</td>`;
+      });
+      rowHtml += `<td>${fmt(r.totalBalance)}</td>`;
+      tr.innerHTML = rowHtml;
+      frag.appendChild(tr);
+    });
+    body.appendChild(frag);
+  } else {
+    const cardId = parseInt(scheduleFilter);
+    const c = sim.cards.find(cc=>cc.id===cardId);
+    const activationPeriod = sim.activationMap[cardId] || 1;
+    const payoffP = sim.payoffMap[cardId] || sim.rows.length;
+    const startsLabel = periodDate(activationPeriod, state.frequency, sim.planAnchorDate);
+    $('scheduleToggleLabel').textContent = `Show full period-by-period schedule — ${c ? c.name : 'card'} (starts ${startsLabel}, through payoff)`;
+    head.innerHTML = `<th>${state.frequency==='weekly'?'Week':'Period'}</th><th>Date</th><th>Interest charged</th><th>Payment made</th><th>Balance remaining</th>`;
+
+    const rowsToShow = sim.rows.slice(activationPeriod-1, payoffP);
+    const frag = document.createDocumentFragment();
+    rowsToShow.forEach(r=>{
+      const cd = r.cards[cardId] || {interest:0,payment:0,balance:0};
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.period}</td><td>${periodDate(r.period, state.frequency, sim.planAnchorDate)}</td><td>${fmt(cd.interest)}</td><td>${fmt(cd.payment)}</td><td>${fmt(cd.balance)}</td>`;
+      frag.appendChild(tr);
+    });
+    body.appendChild(frag);
+  }
+}
+
+// init
+try{
+  renderInputs();
+  attachInputListeners();
+  compute();
+}catch(err){
+  console.error(err);
+  showFatalError(err && err.message ? err.message : 'failed to start');
+}
+</script>
+</body>
+</html>
