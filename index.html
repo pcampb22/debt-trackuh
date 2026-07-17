@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Debt Tracker">
+<meta name="apple-mobile-web-app-title" content="The Untangling">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f766e">
-<title>Debt Payoff & Guilt-Free Spending Tracker</title>
+<title>The Untangling: Spend King, Pay Fierce</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -277,6 +277,12 @@
     color:var(--muted);
     margin-bottom:5px;
   }
+  .computed-note{
+    font-size:13px;
+    color:var(--muted);
+    margin:8px 0 0;
+  }
+  .computed-note strong{color:var(--teal-700);}
   .row-item{
     border:1px solid var(--border);
     border-radius:10px;
@@ -350,7 +356,7 @@
 
 <div id="fatalError"></div>
 
-<h1>Debt Payoff & Guilt-Free Spending Tracker</h1>
+<h1>The Untangling: Spend King, Pay Fierce</h1>
 <p class="subtitle">Track your cards, see your snowball payoff plan, and know exactly what's safe to spend.</p>
 
 <div class="toolbar">
@@ -397,13 +403,21 @@
     <div class="panel">
       <h2>Income</h2>
       <div class="field">
-        <label for="incomeInput">Monthly income</label>
-        <input type="number" inputmode="decimal" id="incomeInput" min="0" step="1">
+        <label for="paycheckAmountInput">Paycheck amount</label>
+        <input type="number" inputmode="decimal" id="paycheckAmountInput" min="0" step="1">
+      </div>
+      <div class="field">
+        <label for="paycheckFrequencyInput">I'm paid</label>
+        <select id="paycheckFrequencyInput">
+          <option value="weekly">Weekly</option>
+          <option value="biweekly">Every 2 weeks</option>
+        </select>
       </div>
       <div class="field">
         <label for="extraIncomeInput">Additional income this month (optional)</label>
         <input type="number" inputmode="decimal" id="extraIncomeInput" min="0" step="1">
       </div>
+      <p class="computed-note">≈ <strong id="computedMonthlyIncome">$0</strong> / month</p>
     </div>
 
     <div class="panel">
@@ -450,8 +464,8 @@ function showFatalError(msg){
   }catch(err){}
 }
 
-var STATE_VERSION = 3;
-var STORAGE_KEY = 'debtPayoffTrackerState_v3';
+var STATE_VERSION = 4;
+var STORAGE_KEY = 'debtPayoffTrackerState_v4';
 
 function uid(){ return 'id' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
 function num(v){ var n = parseFloat(v); return isNaN(n) ? 0 : n; }
@@ -460,7 +474,8 @@ function defaultState(){
   return {
     version: STATE_VERSION,
     frequency: 'weekly',
-    income: 4000,
+    paycheckAmount: 1000,
+    paycheckFrequency: 'weekly',
     extraIncome: 0,
     expenses: [
       {id: uid(), name:'Rent', amount:1200},
@@ -506,6 +521,11 @@ function toPeriod(amount, fromFreq, ppy){
   var annual = f==='weekly' ? amount*52 : f==='biweekly' ? amount*26 : amount*12;
   return annual/ppy;
 }
+function toMonthly(amount, fromFreq){
+  var f = normalizeFreq(fromFreq, 'monthly');
+  var annual = f==='weekly' ? amount*52 : f==='biweekly' ? amount*26 : amount*12;
+  return annual/12;
+}
 function parseDateOrToday(dateStr){
   if(dateStr){
     var d = new Date(dateStr + 'T00:00:00');
@@ -543,7 +563,8 @@ function fmtDate(d){
 
 function computeGuiltFree(){
   var ppy = periodsPerYear(state.frequency);
-  var monthlyIncome = num(state.income) + num(state.extraIncome);
+  var monthlyFromPaycheck = toMonthly(num(state.paycheckAmount), state.paycheckFrequency);
+  var monthlyIncome = monthlyFromPaycheck + num(state.extraIncome);
   var monthlyExpenses = state.expenses.reduce(function(s,e){ return s + num(e.amount); }, 0);
   var monthlyDebtPayment = num(state.debtPayment) * ppy / 12;
   var monthlyGuiltFree = monthlyIncome - monthlyExpenses - monthlyDebtPayment;
@@ -763,7 +784,8 @@ function refreshComputedDisplays(){
 }
 
 function updateTopLevelInputsFromState(){
-  document.getElementById('incomeInput').value = state.income;
+  document.getElementById('paycheckAmountInput').value = state.paycheckAmount;
+  document.getElementById('paycheckFrequencyInput').value = state.paycheckFrequency;
   document.getElementById('extraIncomeInput').value = state.extraIncome;
   document.getElementById('debtPaymentInput').value = state.debtPayment;
 }
@@ -775,7 +797,9 @@ function compute(){
   var gf = computeGuiltFree();
   var sim = simulateSnowball();
 
-  var heroAmount = state.frequency==='weekly' ? gf.perPeriodGuiltFree : gf.perPeriodGuiltFree;
+  document.getElementById('computedMonthlyIncome').textContent = fmtMoneyWhole(gf.monthlyIncome);
+
+  var heroAmount = gf.perPeriodGuiltFree;
   var periodLabel = state.frequency==='weekly' ? 'per week' : 'per 2 weeks';
   document.getElementById('heroAmount').textContent = fmtMoneyWhole(heroAmount) + ' ' + periodLabel;
   document.getElementById('heroBreakdown').innerHTML =
@@ -893,7 +917,8 @@ function exportToExcel(){
     var settingsRows = [
       ['Field','Value'],
       ['Frequency', state.frequency],
-      ['Monthly Income', state.income],
+      ['Paycheck Amount', state.paycheckAmount],
+      ['Paycheck Frequency', state.paycheckFrequency],
       ['Additional Income This Month', state.extraIncome],
       ['Total Debt Payment Per Period', state.debtPayment]
     ];
@@ -939,7 +964,8 @@ function handleImportFile(evt){
           if(!r || r.length<2) return;
           var key = r[0], val = r[1];
           if(key==='Frequency') newState.frequency = normalizeFreq(val,'weekly');
-          if(key==='Monthly Income') newState.income = num(val);
+          if(key==='Paycheck Amount') newState.paycheckAmount = num(val);
+          if(key==='Paycheck Frequency') newState.paycheckFrequency = normalizeFreq(val,'weekly');
           if(key==='Additional Income This Month') newState.extraIncome = num(val);
           if(key==='Total Debt Payment Per Period') newState.debtPayment = num(val);
         });
@@ -985,18 +1011,30 @@ function handleImportFile(evt){
 function init(){
   state = loadState();
 
-  document.getElementById('incomeInput').value = state.income;
+  document.getElementById('paycheckAmountInput').value = state.paycheckAmount;
+  document.getElementById('paycheckFrequencyInput').value = state.paycheckFrequency;
   document.getElementById('extraIncomeInput').value = state.extraIncome;
   document.getElementById('debtPaymentInput').value = state.debtPayment;
 
-  ['incomeInput','extraIncomeInput','debtPaymentInput'].forEach(function(id){
-    document.getElementById(id).addEventListener('input', function(){
-      if(id==='incomeInput') state.income = num(this.value);
-      if(id==='extraIncomeInput') state.extraIncome = num(this.value);
-      if(id==='debtPaymentInput') state.debtPayment = num(this.value);
-      saveState();
-      compute();
-    });
+  document.getElementById('paycheckAmountInput').addEventListener('input', function(){
+    state.paycheckAmount = num(this.value);
+    saveState();
+    compute();
+  });
+  document.getElementById('paycheckFrequencyInput').addEventListener('change', function(){
+    state.paycheckFrequency = normalizeFreq(this.value, 'weekly');
+    saveState();
+    compute();
+  });
+  document.getElementById('extraIncomeInput').addEventListener('input', function(){
+    state.extraIncome = num(this.value);
+    saveState();
+    compute();
+  });
+  document.getElementById('debtPaymentInput').addEventListener('input', function(){
+    state.debtPayment = num(this.value);
+    saveState();
+    compute();
   });
 
   document.getElementById('addExpenseBtn').addEventListener('click', function(){
