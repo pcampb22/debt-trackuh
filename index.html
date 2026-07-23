@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="The Untangling">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0f766e">
-<title>The Untangling: Spend Kind, Pay Fierce</title>
+<title>The Untangling: Spend King, Pay Fierce</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -34,6 +34,7 @@
     background:var(--page-bg);
     color:var(--ink);
     padding:20px;
+    padding-top:calc(20px + env(safe-area-inset-top));
     padding-bottom:60px;
     max-width:1100px;
     margin:0 auto;
@@ -334,6 +335,39 @@
     padding:6px 8px;
     min-height:32px;
   }
+  .payment-log-row{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--border);
+  }
+  .payment-form{
+    margin-top:10px;
+  }
+  .payment-form .form-actions{
+    display:flex;
+    gap:8px;
+  }
+  .payment-history-details{margin-top:10px;}
+  .payment-history-details summary{
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+    padding:4px 0;
+    min-height:auto;
+  }
+  .payment-history{margin-top:6px;}
+  .payment-history-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12px;
+    padding:6px 0;
+    border-bottom:1px solid var(--border);
+    gap:8px;
+  }
+  .payment-history-item:last-child{border-bottom:none;}
+  .payment-history-item .ph-date{color:var(--muted);}
+  .payment-history-item .ph-amount{font-weight:700;color:var(--teal-700);}
   footer{
     margin-top:30px;
     text-align:center;
@@ -345,9 +379,11 @@
     .row-fields{grid-template-columns:1fr;}
   }
   @media (max-width:480px){
-    body{padding:14px;
-        padding-top:calc(47px + env(safe-area-inset-top));
-        padding-bottom:60px;}
+    body{
+      padding:14px;
+      padding-top:calc(34px + env(safe-area-inset-top));
+      padding-bottom:60px;
+    }
     h1{font-size:22px;}
     .result-hero .amount{font-size:32px;}
     .toolbar .btn{flex:1 1 auto;text-align:center;}
@@ -486,7 +522,7 @@ function defaultState(){
     ],
     debtPayment: 500,
     cards: [
-      {id: uid(), name:'Card 1', balance:2500, apr:22.9, minPayment:75, minPaymentFrequency:'monthly', startDate:''}
+      {id: uid(), name:'Card 1', balance:2500, apr:22.9, minPayment:75, minPaymentFrequency:'monthly', startDate:'', paymentHistory:[]}
     ]
   };
 }
@@ -725,10 +761,41 @@ function renderCardList(){
           '</select>' +
         '</div>' +
         '<div class="field full"><label>Start date (optional — leave blank to start now)</label><input type="date" data-field="startDate" data-id="'+card.id+'" data-type="card" value="'+toDateInputValue(card.startDate)+'"></div>' +
-      '</div>';
+      '</div>' +
+      buildPaymentLogHtml(card);
     list.appendChild(row);
   });
   attachRowListeners(list);
+}
+
+function buildPaymentLogHtml(card){
+  var history = Array.isArray(card.paymentHistory) ? card.paymentHistory : [];
+  var html =
+    '<div class="payment-log-row">' +
+      '<button class="btn btn-small btn-solid" data-action="toggle-payment" data-id="'+card.id+'">💸 Log Payment</button>' +
+    '</div>' +
+    '<div class="payment-form" id="paymentForm_'+card.id+'" style="display:none;">' +
+      '<div class="row-fields">' +
+        '<div class="field"><label>Amount paid</label><input type="number" inputmode="decimal" min="0" step="1" class="payment-amount-input" data-id="'+card.id+'"></div>' +
+        '<div class="field"><label>Date</label><input type="date" class="payment-date-input" data-id="'+card.id+'" value="'+toDateInputValue(new Date())+'"></div>' +
+      '</div>' +
+      '<div class="form-actions">' +
+        '<button class="btn btn-small btn-solid" data-action="confirm-payment" data-id="'+card.id+'">Confirm Payment</button>' +
+        '<button class="btn btn-small" data-action="cancel-payment" data-id="'+card.id+'">Cancel</button>' +
+      '</div>' +
+    '</div>';
+  if(history.length){
+    html += '<details class="payment-history-details"><summary>Payment history ('+history.length+')</summary><div class="payment-history">';
+    history.slice().reverse().forEach(function(p){
+      html += '<div class="payment-history-item">' +
+        '<span class="ph-date">'+fmtDate(parseDateOrToday(p.date))+'</span>' +
+        '<span class="ph-amount">'+fmtMoneyWhole(p.amount)+'</span>' +
+        '<button class="remove-btn" data-action="remove-payment" data-id="'+card.id+'" data-entry="'+p.id+'">Undo</button>' +
+      '</div>';
+    });
+    html += '</div></details>';
+  }
+  return html;
 }
 
 function escapeHtml(s){
@@ -740,6 +807,7 @@ function escapeAttr(s){ return escapeHtml(s); }
 
 function attachRowListeners(container){
   container.querySelectorAll('input, select').forEach(function(el){
+    if(el.classList.contains('payment-amount-input') || el.classList.contains('payment-date-input')) return;
     el.addEventListener('input', onFieldChange);
     el.addEventListener('change', onFieldChange);
   });
@@ -755,6 +823,60 @@ function attachRowListeners(container){
       saveState(); renderInputs(); compute();
     });
   });
+  container.querySelectorAll('[data-action="toggle-payment"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var form = document.getElementById('paymentForm_'+btn.dataset.id);
+      if(form){ form.style.display = (form.style.display==='none' || !form.style.display) ? 'block' : 'none'; }
+    });
+  });
+  container.querySelectorAll('[data-action="cancel-payment"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var form = document.getElementById('paymentForm_'+btn.dataset.id);
+      if(form){ form.style.display = 'none'; }
+    });
+  });
+  container.querySelectorAll('[data-action="confirm-payment"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.dataset.id;
+      var amountInput = container.querySelector('.payment-amount-input[data-id="'+id+'"]');
+      var dateInput = container.querySelector('.payment-date-input[data-id="'+id+'"]');
+      var amount = amountInput ? num(amountInput.value) : 0;
+      var dateVal = dateInput ? dateInput.value : '';
+      if(amount<=0){ alert('Enter a payment amount greater than 0.'); return; }
+      logPayment(id, amount, dateVal);
+    });
+  });
+  container.querySelectorAll('[data-action="remove-payment"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      removePaymentHistoryEntry(btn.dataset.id, btn.dataset.entry);
+    });
+  });
+}
+
+function logPayment(cardId, amount, dateStr){
+  var card = state.cards.find(function(c){ return c.id===cardId; });
+  if(!card) return;
+  amount = num(amount);
+  if(amount<=0) return;
+  if(!Array.isArray(card.paymentHistory)) card.paymentHistory = [];
+  card.balance = Math.max(0, num(card.balance) - amount);
+  card.paymentHistory.push({id: uid(), amount: amount, date: dateStr || toDateInputValue(new Date())});
+  saveState();
+  renderInputs();
+  compute();
+}
+
+function removePaymentHistoryEntry(cardId, entryId){
+  var card = state.cards.find(function(c){ return c.id===cardId; });
+  if(!card || !Array.isArray(card.paymentHistory)) return;
+  var idx = card.paymentHistory.findIndex(function(p){ return p.id===entryId; });
+  if(idx===-1) return;
+  var entry = card.paymentHistory[idx];
+  card.balance = num(card.balance) + num(entry.amount);
+  card.paymentHistory.splice(idx,1);
+  saveState();
+  renderInputs();
+  compute();
 }
 
 function onFieldChange(e){
@@ -988,7 +1110,8 @@ function handleImportFile(evt){
             apr:num(r['APR %']),
             minPayment:num(r['Minimum Payment']),
             minPaymentFrequency:normalizeFreq(r['Minimum Payment Frequency'],'monthly'),
-            startDate: r['Start Date'] ? String(r['Start Date']) : ''
+            startDate: r['Start Date'] ? String(r['Start Date']) : '',
+            paymentHistory: []
           };
         });
       }
@@ -1044,7 +1167,7 @@ function init(){
     saveState(); renderInputs(); compute();
   });
   document.getElementById('addCardBtn').addEventListener('click', function(){
-    state.cards.push({id:uid(), name:'New Card', balance:0, apr:0, minPayment:0, minPaymentFrequency:'monthly', startDate:''});
+    state.cards.push({id:uid(), name:'New Card', balance:0, apr:0, minPayment:0, minPaymentFrequency:'monthly', startDate:'', paymentHistory:[]});
     saveState(); renderInputs(); compute();
   });
 
