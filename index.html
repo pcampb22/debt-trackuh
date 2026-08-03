@@ -6,28 +6,32 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="The Untangling">
-<title>The Untangling: Spend King, Pay Fierce</title>
+<title>The Untangling: Spend Kind, Pay Fierce</title>
 <style>
   :root{
     --teal-dark:#0f5c5c; --teal:#158080; --teal-mid:#1fa0a0; --teal-light:#d6f0ee;
     --teal-pale:#effaf9; --cream:#fff9f0; --gold:#d9a441; --coral:#e0685a;
     --green:#3e8e5a; --red:#c0392b; --ink:#1f2a2a; --grey:#6b7a79; --white:#fff;
   }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box; -webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  html{-webkit-tap-highlight-color:transparent;}
   body{
     margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--teal-pale); color:var(--ink); padding-bottom:40px;
+    font-size:16px; -webkit-font-smoothing:antialiased;
   }
   header{
     background:linear-gradient(135deg,var(--teal-dark),var(--teal));
-    color:var(--white); padding:22px 18px 18px; position:relative;
+    color:var(--white); padding:18px 16px 16px; position:relative;
+    padding-top:calc(18px + env(safe-area-inset-top));
   }
-  header h1{margin:0 0 4px; font-size:1.5rem; font-weight:800; letter-spacing:.2px;}
-  header p{margin:0; font-size:.85rem; opacity:.85;}
+  header h1{margin:0 0 4px; font-size:1.3rem; font-weight:800; letter-spacing:.2px; line-height:1.25;}
+  header p{margin:0; font-size:.82rem; opacity:.85;}
   .toolbar{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
   .toolbar button, .btn{
     background:var(--white); color:var(--teal-dark); border:none; border-radius:8px;
-    padding:9px 14px; font-size:.85rem; font-weight:700; cursor:pointer;
+    padding:11px 16px; font-size:.9rem; font-weight:700; cursor:pointer;
+    min-height:40px; touch-action:manipulation;
   }
   .toolbar button.secondary{background:rgba(255,255,255,.15); color:var(--white);}
   #fileInput{display:none;}
@@ -35,88 +39,117 @@
     display:none; background:#c0392b; color:#fff; padding:14px 18px; font-size:.85rem;
     position:sticky; top:0; z-index:50;
   }
-  #warnings{padding:0 16px;}
+  #warnings{padding:0 14px;}
   .warning{
     background:#fff3cd; border:1px solid #e0c46c; color:#7a5c00; padding:10px 14px;
     border-radius:8px; margin:10px 0; font-size:.85rem;
   }
-  main{max-width:1100px; margin:0 auto; padding:16px;}
+  .success{
+    background:#d7f0da; border:1px solid #8fcf9a; color:#1f5c2a; padding:10px 14px;
+    border-radius:8px; margin:10px 0; font-size:.85rem;
+  }
+  main{max-width:1100px; margin:0 auto; padding:14px;}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-  @media(max-width:800px){.grid2{grid-template-columns:1fr;}}
+  @media(max-width:800px){.grid2{grid-template-columns:1fr; gap:14px;}}
   .card{
-    background:var(--white); border-radius:16px; padding:20px; margin-bottom:16px;
+    background:var(--white); border-radius:16px; padding:18px; margin-bottom:14px;
     box-shadow:0 2px 10px rgba(15,92,92,.08);
   }
-  .card h2{margin:0 0 14px; font-size:1.1rem; color:var(--teal-dark); font-weight:800;}
+  .card-head{display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; margin-bottom:14px;}
+  .card-head h2{margin:0; font-size:1.05rem; color:var(--teal-dark); font-weight:800;}
+  .chev{font-size:1.1rem; color:var(--grey); transition:transform .15s; flex-shrink:0; margin-left:8px; line-height:1;}
+  .chev.collapsed{transform:rotate(-90deg);}
+  .card h2{margin:0 0 14px; font-size:1.05rem; color:var(--teal-dark); font-weight:800;}
   label{display:block; font-size:.78rem; font-weight:700; color:var(--grey); margin:10px 0 4px;}
   input[type=text],input[type=number],input[type=date],select{
-    width:100%; padding:8px 10px; border:1px solid #cfe4e2; border-radius:8px; font-size:.9rem;
-    background:var(--cream); color:var(--ink);
+    width:100%; padding:11px 12px; border:1px solid #cfe4e2; border-radius:8px;
+    font-size:16px; background:var(--cream); color:var(--ink); min-height:44px;
+    -webkit-appearance:none; appearance:none;
   }
-  input[type=checkbox]{width:16px; height:16px; vertical-align:middle;}
+  input[type=checkbox]{width:18px; height:18px; vertical-align:middle;}
   .row{display:flex; gap:8px; align-items:flex-end;}
-  .row > div{flex:1;}
+  .row > div{flex:1; min-width:0;}
   .exp-row, .payment-card-block{
     border:1px solid #e2f0ee; border-radius:10px; padding:10px 12px; margin-bottom:10px; background:#fbfffe;
   }
   .exp-row-main{display:grid; grid-template-columns:2fr 1fr auto; gap:8px; align-items:end;}
   .exp-card-field{margin-top:8px;}
-  .mini-note{font-size:.72rem; color:var(--grey); margin-top:4px;}
-  .remove-btn{background:none; border:none; color:var(--coral); font-size:1rem; cursor:pointer; padding:4px 8px;}
-  .add-btn{background:var(--teal-light); color:var(--teal-dark); border:none; border-radius:8px; padding:8px 12px; font-size:.82rem; font-weight:700; cursor:pointer; margin-top:6px;}
+  .mini-note{font-size:.75rem; color:var(--grey); margin-top:4px; line-height:1.4;}
+  .remove-btn{
+    background:none; border:none; color:var(--coral); font-size:1.05rem; cursor:pointer;
+    padding:8px 10px; min-height:40px; min-width:40px; touch-action:manipulation;
+  }
+  .add-btn{
+    background:var(--teal-light); color:var(--teal-dark); border:none; border-radius:8px;
+    padding:11px 14px; font-size:.85rem; font-weight:700; cursor:pointer; margin-top:6px;
+    min-height:42px; width:100%; touch-action:manipulation;
+  }
   .payment-log-table{width:100%; border-collapse:collapse; margin-top:8px; font-size:.78rem;}
-  .payment-log-table th,.payment-log-table td{padding:5px 6px; text-align:left; border-bottom:1px solid #eef6f5;}
-  .log-btn{background:var(--teal); color:#fff; border:none; border-radius:8px; padding:7px 12px; font-size:.8rem; font-weight:700; cursor:pointer; margin-top:8px;}
-  .recur-box{background:var(--teal-pale); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:.82rem;}
+  .payment-log-table th,.payment-log-table td{padding:7px 6px; text-align:left; border-bottom:1px solid #eef6f5;}
+  .log-btn{
+    background:var(--teal); color:#fff; border:none; border-radius:8px; padding:11px 14px;
+    font-size:.85rem; font-weight:700; cursor:pointer; margin-top:8px; min-height:42px;
+    width:100%; touch-action:manipulation;
+  }
+  .recur-box{background:var(--teal-pale); border-radius:10px; padding:10px 12px; margin-top:10px; font-size:.85rem;}
   .recur-box h4{margin:0 0 6px; font-size:.85rem; color:var(--teal-dark);}
-  .recur-item{display:flex; justify-content:space-between; padding:2px 0;}
-  .recommend-line{font-weight:800; color:var(--teal-dark); margin-top:6px; font-size:.88rem;}
+  .recur-item{display:flex; justify-content:space-between; gap:8px; padding:3px 0;}
+  .recommend-line{font-weight:800; color:var(--teal-dark); margin-top:6px; font-size:.9rem;}
   footer{text-align:center; color:var(--grey); font-size:.75rem; padding:20px;}
 
-  /* ---- Hero (Dashboard guilt-free card) ---- */
   .hero{
     background:linear-gradient(135deg,var(--teal-dark),var(--teal)); color:#fff; border-radius:18px;
-    padding:22px 22px 20px; margin-bottom:16px;
+    padding:20px 18px 18px; margin-bottom:14px;
   }
-  .hero-label{font-size:.72rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; opacity:.85;}
-  .hero-amt{font-size:2.4rem; font-weight:800; margin:6px 0 18px;}
-  .hero-grid{display:grid; grid-template-columns:1fr 1fr; row-gap:16px; column-gap:10px;}
-  .hero-stat-label{font-size:.78rem; opacity:.8; margin-bottom:2px;}
-  .hero-stat-val{font-size:1.15rem; font-weight:800;}
+  .hero-label{font-size:.7rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; opacity:.85;}
+  .hero-amt{font-size:clamp(1.7rem, 8vw, 2.4rem); font-weight:800; margin:6px 0 16px; line-height:1.15;}
+  .hero-grid{display:grid; grid-template-columns:1fr 1fr; row-gap:14px; column-gap:10px;}
+  .hero-stat-label{font-size:.75rem; opacity:.8; margin-bottom:2px;}
+  .hero-stat-val{font-size:1.05rem; font-weight:800; word-break:break-word;}
 
-  /* ---- Payoff Schedule card ---- */
-  .sched-summary-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eef4f3; font-size:.92rem;}
+  .sched-summary-row{display:flex; justify-content:space-between; align-items:flex-start; padding:10px 0; border-bottom:1px solid #eef4f3; font-size:.9rem; gap:8px;}
   .sched-summary-row:last-of-type{border-bottom:none;}
-  .sched-summary-row b{font-size:1rem;}
+  .sched-summary-row b{font-size:.98rem; white-space:nowrap;}
   .payment-card-item{padding:16px 0; border-bottom:1px solid #eef4f3;}
   .payment-card-item:last-child{border-bottom:none;}
-  .payment-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
-  .payment-card-head h3{margin:0; font-size:1.05rem; font-weight:800; color:var(--ink);}
+  .payment-card-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:8px; flex-wrap:wrap;}
+  .payment-card-head h3{margin:0; font-size:1rem; font-weight:800; color:var(--ink);}
   .pill{
-    display:inline-block; font-size:.72rem; font-weight:700; padding:4px 12px; border-radius:20px;
+    display:inline-block; font-size:.7rem; font-weight:700; padding:5px 12px; border-radius:20px;
     background:var(--teal-light); color:var(--teal-dark); white-space:nowrap;
   }
   .pill.active{background:#d7f0da; color:var(--green);}
   .payment-card-grid{display:grid; grid-template-columns:1fr 1fr; row-gap:12px; column-gap:10px;}
-  .pcg-label{font-size:.68rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--grey); margin-bottom:2px;}
-  .pcg-val{font-size:1rem; font-weight:800; color:var(--ink);}
+  .pcg-label{font-size:.66rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--grey); margin-bottom:2px;}
+  .pcg-val{font-size:.98rem; font-weight:800; color:var(--ink);}
   .view-schedule-link{
     display:inline-flex; align-items:center; gap:6px; color:var(--teal); font-weight:700; font-size:.88rem;
-    cursor:pointer; margin-top:10px; background:none; border:none; padding:0;
+    cursor:pointer; margin-top:10px; background:none; border:none; padding:10px 0; min-height:40px;
+    touch-action:manipulation;
   }
   .view-schedule-link .arrow{transition:transform .15s;}
   .view-schedule-link.open .arrow{transform:rotate(90deg);}
 
-  /* ---- Segmented toggle (Weekly / Biweekly) ---- */
   .segtoggle{display:flex; border:1px solid var(--teal); border-radius:10px; overflow:hidden; margin-top:4px;}
   .segtoggle button{
-    flex:1; padding:10px 8px; border:none; background:var(--white); color:var(--teal-dark);
-    font-weight:700; font-size:.88rem; cursor:pointer;
+    flex:1; padding:12px 8px; border:none; background:var(--white); color:var(--teal-dark);
+    font-weight:700; font-size:.88rem; cursor:pointer; min-height:44px; touch-action:manipulation;
   }
   .segtoggle button.selected{background:var(--teal-dark); color:#fff;}
 
-  @media(max-width:480px){
-    header{padding-top:calc(34px + env(safe-area-inset-top));}
+  details summary{min-height:36px; display:flex; align-items:center;}
+
+  .scenario-card{border:1px solid #e2f0ee; border-radius:10px; padding:12px; margin-bottom:10px; background:#fbfffe;}
+  .scenario-head{font-weight:800; color:var(--teal-dark); display:flex; justify-content:space-between; align-items:baseline; font-size:.92rem; gap:8px; flex-wrap:wrap;}
+  .scenario-amt{color:var(--ink); font-weight:700; font-size:.85rem;}
+
+  @media(max-width:420px){
+    main{padding:10px;}
+    .card{padding:14px; border-radius:14px;}
+    .hero{padding:18px 14px 16px; border-radius:16px;}
+    header{padding-left:14px; padding-right:14px;}
+    .payment-card-grid{row-gap:10px;}
+    .exp-row-main{grid-template-columns:1fr 1fr; grid-template-areas:"name name" "amt remove"; }
   }
 </style>
 <!-- inline onclick/onchange handlers below run in global scope, so all functions
@@ -128,7 +161,7 @@
 <div id="fatalError"></div>
 
 <header>
-  <h1>The Untangling: Spend King, Pay Fierce</h1>
+  <h1>The Untangling: Spend Kind, Pay Fierce</h1>
   <p>Your debt payoff + guilt-free spending tracker</p>
   <div class="toolbar">
     <button class="secondary" onclick="document.getElementById('fileInput').click()">Import</button>
@@ -165,54 +198,89 @@
   </div>
 
   <div class="card">
-    <h2>Payoff Schedule</h2>
-    <div id="payoffScheduleList"></div>
+    <div class="card-head" onclick="toggleCollapse('schedule')"><h2>Payoff Schedule</h2><span class="chev" id="chev-schedule">▾</span></div>
+    <div class="card-body" id="body-schedule">
+      <div id="payoffScheduleList"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head" onclick="toggleCollapse('perPaycheck')"><h2>📅 Per-Paycheck Plan</h2><span class="chev" id="chev-perPaycheck">▾</span></div>
+    <div class="card-body" id="body-perPaycheck">
+      <div class="mini-note" style="margin-bottom:8px;">Check "Include in per-paycheck plan" on any expense below, and this shows a steady amount to set aside every check — instead of getting hit all at once on the due date.</div>
+      <div id="perPaycheckSummary"></div>
+      <div id="perPaycheckWeeks" style="margin-top:10px;"></div>
+    </div>
   </div>
 
   <div class="grid2">
     <div>
       <div class="card">
-        <h2>💰 Income</h2>
-        <div class="row">
-          <div>
-            <label>Paycheck amount</label>
-            <input type="number" id="paycheckAmount" oninput="onFieldChange()">
+        <div class="card-head" onclick="toggleCollapse('income')"><h2>💰 Income</h2><span class="chev" id="chev-income">▾</span></div>
+        <div class="card-body" id="body-income">
+          <div class="row">
+            <div>
+              <label>Paycheck amount</label>
+              <input type="number" id="paycheckAmount" inputmode="decimal" oninput="onFieldChange()">
+            </div>
           </div>
+          <label>I'm paid</label>
+          <div class="segtoggle" id="paycheckFreqToggle">
+            <button type="button" onclick="setPaycheckFrequency('weekly')" data-val="weekly">Weekly</button>
+            <button type="button" onclick="setPaycheckFrequency('biweekly')" data-val="biweekly">Biweekly</button>
+          </div>
+          <label>Extra / other monthly income</label>
+          <input type="number" id="extraIncome" inputmode="decimal" oninput="onFieldChange()">
+          <label>Next paycheck date (optional — used for the Per-Paycheck Plan dates)</label>
+          <input type="date" id="nextPaycheckDate" onchange="onFieldChange()">
         </div>
-        <label>I'm paid</label>
-        <div class="segtoggle" id="paycheckFreqToggle">
-          <button type="button" onclick="setPaycheckFrequency('weekly')" data-val="weekly">Weekly</button>
-          <button type="button" onclick="setPaycheckFrequency('biweekly')" data-val="biweekly">Biweekly</button>
-        </div>
-        <label>Extra / other monthly income</label>
-        <input type="number" id="extraIncome" oninput="onFieldChange()">
       </div>
 
       <div class="card">
-        <h2>🧾 Monthly Expenses</h2>
-        <div id="expenseList"></div>
-        <button class="add-btn" onclick="addExpense()">+ Add expense</button>
+        <div class="card-head" onclick="toggleCollapse('expenses')"><h2>🧾 Monthly Expenses</h2><span class="chev" id="chev-expenses">▾</span></div>
+        <div class="card-body" id="body-expenses">
+          <div id="expenseList"></div>
+          <button class="add-btn" onclick="addExpense()">+ Add expense</button>
+        </div>
       </div>
     </div>
 
     <div>
       <div class="card">
-        <h2>💳 Debt Payment Plan</h2>
-        <label>Payment frequency</label>
-        <div class="segtoggle" id="debtFreqToggle">
-          <button type="button" onclick="setDebtFrequency('weekly')" data-val="weekly">Weekly</button>
-          <button type="button" onclick="setDebtFrequency('biweekly')" data-val="biweekly">Biweekly</button>
+        <div class="card-head" onclick="toggleCollapse('debtplan')"><h2>💳 Debt Payment Plan</h2><span class="chev" id="chev-debtplan">▾</span></div>
+        <div class="card-body" id="body-debtplan">
+          <label>Payment frequency</label>
+          <div class="segtoggle" id="debtFreqToggle">
+            <button type="button" onclick="setDebtFrequency('weekly')" data-val="weekly">Weekly</button>
+            <button type="button" onclick="setDebtFrequency('biweekly')" data-val="biweekly">Biweekly</button>
+          </div>
+          <label>Total debt payment / period</label>
+          <input type="number" id="totalDebtPayment" inputmode="decimal" oninput="onFieldChange()">
+          <label>Plan start date</label>
+          <input type="date" id="planStartDate" onchange="onFieldChange()">
         </div>
-        <label>Total debt payment / period</label>
-        <input type="number" id="totalDebtPayment" oninput="onFieldChange()">
-        <label>Plan start date</label>
-        <input type="date" id="planStartDate" onchange="onFieldChange()">
       </div>
 
       <div class="card">
-        <h2>💳 Credit Cards</h2>
-        <div id="cardList"></div>
-        <button class="add-btn" onclick="addCard()">+ Add card / loan</button>
+        <div class="card-head" onclick="toggleCollapse('guidance')"><h2>🧭 Debt Payment Guidance</h2><span class="chev" id="chev-guidance">▾</span></div>
+        <div class="card-body" id="body-guidance">
+          <div id="startingRecommendation"></div>
+          <div id="benchmarkCheck" style="margin-top:12px;"></div>
+          <div id="scenarioSection" style="margin-top:14px;">
+            <div style="font-weight:700; font-size:.85rem; color:var(--ink);">If you paid...</div>
+            <div id="scenarioNote" class="mini-note"></div>
+            <div id="scenarioCompare" style="margin-top:8px;"></div>
+          </div>
+          <div class="mini-note" style="margin-top:6px;">This is general budgeting guidance based on common rules of thumb — not personalized financial advice. A free nonprofit credit counselor (e.g. NFCC-accredited) can review your specific situation.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head" onclick="toggleCollapse('cards')"><h2>💳 Credit Cards</h2><span class="chev" id="chev-cards">▾</span></div>
+        <div class="card-body" id="body-cards">
+          <div id="cardList"></div>
+          <button class="add-btn" onclick="addCard()">+ Add card / loan</button>
+        </div>
       </div>
     </div>
   </div>
@@ -233,7 +301,7 @@ function showFatalError(msg){
   el.textContent = '⚠️ ' + msg + ' — your data is safe, but try reloading the page.';
 }
 
-var STATE_VERSION = 6;
+var STATE_VERSION = 7;
 var STORAGE_KEY = 'untangling_tracker_state';
 
 function uid(){ return 'id' + Math.random().toString(36).slice(2,10); }
@@ -244,13 +312,14 @@ function defaultState(){
     paycheckAmount: 0,
     paycheckFrequency: 'biweekly',
     extraIncome: 0,
+    nextPaycheckDate: '',
     debtFrequency: 'biweekly',
     totalDebtPayment: 0,
     planStartDate: '',
     expenses: [
-      {id: uid(), name:'Rent/Mortgage', amount:0, chargedTo:'', dueDay:''},
-      {id: uid(), name:'Utilities', amount:0, chargedTo:'', dueDay:''},
-      {id: uid(), name:'Groceries', amount:0, chargedTo:'', dueDay:''}
+      {id: uid(), name:'Rent/Mortgage', amount:0, chargedTo:'', dueDay:'', includeInPlan:false},
+      {id: uid(), name:'Utilities', amount:0, chargedTo:'', dueDay:'', includeInPlan:false},
+      {id: uid(), name:'Groceries', amount:0, chargedTo:'', dueDay:'', includeInPlan:false}
     ],
     cards: [
       {id: uid(), name:'', balance:0, apr:0, minPayment:0, startDate:'', payments:[]}
@@ -282,7 +351,7 @@ function migrateOrDefault(parsed){
     merged.expenses = merged.expenses.map(function(e){
       var chargedTo = e.chargedTo;
       if(chargedTo === undefined) chargedTo = (e.recurring && e.chargedTo) ? e.chargedTo : '';
-      return Object.assign({id: uid(), name:'', amount:0, dueDay:''}, e, {chargedTo: chargedTo || ''});
+      return Object.assign({id: uid(), name:'', amount:0, dueDay:'', includeInPlan:false}, e, {chargedTo: chargedTo || ''});
     });
     if(!Array.isArray(merged.cards)) merged.cards = d.cards;
     merged.cards = merged.cards.map(function(c){
@@ -310,7 +379,15 @@ function showWarning(msg){
   div.className = 'warning';
   div.textContent = msg;
   el.appendChild(div);
-  setTimeout(function(){ if(div.parentNode) div.parentNode.removeChild(div); }, 6000);
+  setTimeout(function(){ if(div.parentNode) div.parentNode.removeChild(div); }, 8000);
+}
+function showSuccess(msg){
+  var el = document.getElementById('warnings');
+  var div = document.createElement('div');
+  div.className = 'success';
+  div.textContent = msg;
+  el.appendChild(div);
+  setTimeout(function(){ if(div.parentNode) div.parentNode.removeChild(div); }, 8000);
 }
 
 function fmtMoney(n){
@@ -339,12 +416,36 @@ function toMonthly(amount, freq){
   return freq === 'weekly' ? amount * 52 / 12 : amount * 26 / 12;
 }
 
+function dueDayFallsInRange(dueDay, start, end){
+  if(!dueDay) return false;
+  var d = new Date(start.getTime());
+  var guard = 0;
+  while(d <= end && guard < 40){
+    if(d.getDate() === Number(dueDay)) return true;
+    d = addDays(d, 1);
+    guard++;
+  }
+  return false;
+}
+
 // ---------- COMPUTATION ----------
 
 function computeGuiltFree(){
   var income = toMonthly(num(state.paycheckAmount), state.paycheckFrequency) + num(state.extraIncome);
   var totalExpenses = state.expenses.reduce(function(sum,e){ return sum + num(e.amount); }, 0);
   var monthlyDebtPayment = num(state.totalDebtPayment) * payPeriodsPerYear(state.debtFrequency) / 12;
+  return {
+    income: income,
+    totalExpenses: totalExpenses,
+    monthlyDebtPayment: monthlyDebtPayment,
+    guiltFree: income - totalExpenses - monthlyDebtPayment
+  };
+}
+
+function computeGuiltFreeWithOverride(debtPaymentOverride){
+  var income = toMonthly(num(state.paycheckAmount), state.paycheckFrequency) + num(state.extraIncome);
+  var totalExpenses = state.expenses.reduce(function(sum,e){ return sum + num(e.amount); }, 0);
+  var monthlyDebtPayment = num(debtPaymentOverride) * payPeriodsPerYear(state.debtFrequency) / 12;
   return {
     income: income,
     totalExpenses: totalExpenses,
@@ -360,7 +461,6 @@ function cardCurrentBalance(card){
   return Math.max(0, num(card.balance) - paid);
 }
 
-// Recurring monthly total charged to a given card (always monthly by design)
 function recurringMonthlyForCard(cardId){
   return state.expenses.reduce(function(sum, e){
     if(e.chargedTo === cardId) return sum + num(e.amount);
@@ -372,11 +472,17 @@ function recurringItemsForCard(cardId){
   return state.expenses.filter(function(e){ return e.chargedTo === cardId; });
 }
 
-// Core snowball simulation. withCharges=true adds smoothed recurring card charges
-// to each card's balance each period and guarantees coverage before extra-pool waterfall.
-function simulateSnowball(withCharges){
+function totalMinPayments(){
+  return state.cards.reduce(function(s,c){
+    return (c.name && c.name.trim() !== '') ? s + num(c.minPayment) : s;
+  }, 0);
+}
+
+function simulateSnowball(withCharges, paymentOverride){
   var cards = state.cards.filter(function(c){ return c.name && c.name.trim() !== ''; });
   if(cards.length === 0) return {cards:[], insufficient:false};
+
+  var totalDebtPaymentThisRun = paymentOverride != null ? num(paymentOverride) : num(state.totalDebtPayment);
 
   var startDate = state.planStartDate ? new Date(state.planStartDate + 'T00:00:00') : new Date();
   if(isNaN(startDate.getTime())) startDate = new Date();
@@ -441,9 +547,9 @@ function simulateSnowball(withCharges){
     });
 
     var totalGuaranteed = cards.reduce(function(s,c){ return s + guaranteed[c.id]; }, 0);
-    var extraPool = Math.max(0, num(state.totalDebtPayment) - totalGuaranteed);
+    var extraPool = Math.max(0, totalDebtPaymentThisRun - totalGuaranteed);
 
-    if(totalGuaranteed > num(state.totalDebtPayment) + 0.01){
+    if(totalGuaranteed > totalDebtPaymentThisRun + 0.01){
       insufficient = true;
     }
 
@@ -505,6 +611,8 @@ function compute(){
     lastWithCharges = {cards:[], insufficient:false};
   }
   refreshComputedDisplays();
+  try{ renderPerPaycheckPlan(); }catch(e){ console.error('renderPerPaycheckPlan failed', e); }
+  try{ renderDebtGuidance(); }catch(e){ console.error('renderDebtGuidance failed', e); }
 }
 
 function refreshComputedDisplays(){
@@ -600,10 +708,38 @@ function buildScheduleTableHtml(wc){
   var capped = false;
   if(showCount > 60){ showCount = 60; capped = true; }
 
+  var freqLabel = state.debtFrequency === 'weekly' ? 'week' : '2 weeks';
+  var caption = '<div class="mini-note" style="margin-bottom:8px;">Each row below is <b>one ' + freqLabel + '</b> — your card likely bills you once a month, so the shaded "total" rows add up all the periods in a calendar month so you can compare directly to your statement.</div>';
+
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var rows = '';
+  var curMonthKey = null, curMonthLabel = '', monthInterest = 0, monthPayment = 0;
+
+  function flushMonth(){
+    if(curMonthKey !== null){
+      rows += '<tr style="background:#eef8f6;font-weight:700;">' +
+        '<td colspan="2">' + escapeHtml(curMonthLabel) + ' total</td>' +
+        '<td>' + fmtMoney(monthPayment) + '</td>' +
+        '<td>' + fmtMoney(monthInterest) + '</td>' +
+        '<td></td>' +
+      '</tr>';
+    }
+  }
+
   for(var i = 0; i < showCount; i++){
     var p = periods[i];
+    var d = (p.date instanceof Date) ? p.date : new Date(p.date);
+    var monthKey = d.getFullYear() + '-' + d.getMonth();
+    if(monthKey !== curMonthKey){
+      flushMonth();
+      curMonthKey = monthKey;
+      curMonthLabel = monthNames[d.getMonth()] + ' ' + d.getFullYear();
+      monthInterest = 0; monthPayment = 0;
+    }
     var payment = p.minPaid + p.extraPaid;
+    monthInterest += p.interest;
+    monthPayment += payment;
+
     rows += '<tr>' +
       '<td>' + fmtDate(p.date) + '</td>' +
       (p.charge > 0 ? '<td>' + fmtMoney(p.charge) + '</td>' : '<td>—</td>') +
@@ -612,13 +748,14 @@ function buildScheduleTableHtml(wc){
       '<td>' + fmtMoney(p.end) + '</td>' +
     '</tr>';
   }
+  flushMonth();
 
   var footnote = capped
     ? '<div class="mini-note">Showing the first 60 payments' + (wc.payoffPeriod ? '' : ' — this card doesn\'t fully pay off within the schedule at your current payment amount') + '.</div>'
     : '';
 
-  return '<table class="payment-log-table"><thead><tr><th>Date</th><th>Charge</th><th>Payment</th><th>Interest</th><th>Balance</th></tr></thead>' +
-    '<tbody>' + rows + '</tbody></table>' + footnote;
+  return caption + '<div style="overflow-x:auto;"><table class="payment-log-table"><thead><tr><th>Date</th><th>Charge</th><th>Payment</th><th>Interest</th><th>Balance</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table></div>' + footnote;
 }
 
 function escapeHtml(s){
@@ -627,11 +764,180 @@ function escapeHtml(s){
   });
 }
 
+// ---------- PER-PAYCHECK PLAN ----------
+
+function renderPerPaycheckPlan(){
+  var summaryEl = document.getElementById('perPaycheckSummary');
+  var weeksEl = document.getElementById('perPaycheckWeeks');
+  if(!summaryEl || !weeksEl) return;
+
+  var included = state.expenses.filter(function(e){ return e.includeInPlan; });
+  if(included.length === 0){
+    summaryEl.innerHTML = '<div class="mini-note">Nothing selected yet — check "Include in per-paycheck plan" on any expense below.</div>';
+    weeksEl.innerHTML = '';
+    return;
+  }
+
+  var perYear = payPeriodsPerYear(state.paycheckFrequency);
+  var items = included.map(function(e){
+    return { name: (e.name && e.name.trim()) ? e.name : '(unnamed)', dueDay: e.dueDay, perCheck: num(e.amount) * 12 / perYear };
+  });
+  var total = items.reduce(function(s,i){ return s + i.perCheck; }, 0);
+
+  var itemsHtml = items.map(function(i){
+    var dueLabel = i.dueDay ? (' · due day ' + i.dueDay) : '';
+    return '<div class="recur-item"><span>' + escapeHtml(i.name) + dueLabel + '</span><span>' + fmtMoney(i.perCheck) + '</span></div>';
+  }).join('');
+
+  summaryEl.innerHTML =
+    '<div class="recommend-line" style="font-size:1.05rem;">Set aside ' + fmtMoney(total) + ' per ' + (state.paycheckFrequency==='weekly'?'week':'paycheck') + '</div>' +
+    '<div class="recur-box" style="margin-top:8px;">' + itemsHtml + '</div>';
+
+  var periodDays = periodDaysFor(state.paycheckFrequency);
+  var n = state.paycheckFrequency === 'weekly' ? 4 : 2;
+  var start = state.nextPaycheckDate ? new Date(state.nextPaycheckDate + 'T00:00:00') : new Date();
+  if(isNaN(start.getTime())) start = new Date();
+
+  var rows = '';
+  for(var i = 0; i < n; i++){
+    var periodStart = addDays(start, i * periodDays);
+    var periodEnd = addDays(periodStart, periodDays - 1);
+    var dueNames = items.filter(function(it){ return dueDayFallsInRange(it.dueDay, periodStart, periodEnd); }).map(function(it){ return it.name; });
+    var label = (state.paycheckFrequency === 'weekly' ? 'Week ' + (i+1) : 'Period ' + (i+1)) + ' (' + fmtDate(periodStart) + ' – ' + fmtDate(periodEnd) + ')';
+    rows += '<div class="sched-summary-row"><span>' + label +
+      (dueNames.length ? '<div class="mini-note">Due: ' + escapeHtml(dueNames.join(', ')) + '</div>' : '') +
+      '</span><b>' + fmtMoney(total) + '</b></div>';
+  }
+  weeksEl.innerHTML = rows;
+}
+
+// ---------- DEBT PAYMENT GUIDANCE ----------
+
+function computeRecommendedDebtPayment(){
+  var income = toMonthly(num(state.paycheckAmount), state.paycheckFrequency) + num(state.extraIncome);
+  var totalExpenses = state.expenses.reduce(function(sum,e){ return sum + num(e.amount); }, 0);
+  var minMonthly = totalMinPayments() * payPeriodsPerYear(state.debtFrequency) / 12;
+  var availableMonthly = income - totalExpenses;
+  var targetMonthly = income * 0.20;
+  var tight = availableMonthly < minMonthly;
+  var ceilingMonthly = Math.max(minMonthly, availableMonthly * 0.9);
+  var recommendedMonthly = Math.min(Math.max(targetMonthly, minMonthly), ceilingMonthly);
+  if(recommendedMonthly < 0 || isNaN(recommendedMonthly)) recommendedMonthly = Math.max(0, minMonthly);
+  var perPeriod = recommendedMonthly * 12 / payPeriodsPerYear(state.debtFrequency);
+  perPeriod = Math.max(0, Math.round(perPeriod / 5) * 5);
+  return { perPeriod: perPeriod, monthly: recommendedMonthly, minMonthly: minMonthly, income: income, tight: tight };
+}
+
+function useRecommendedDebtAmount(amt){
+  state.totalDebtPayment = amt;
+  var input = document.getElementById('totalDebtPayment');
+  if(input) input.value = amt;
+  saveState();
+  compute();
+}
+
+function renderDebtGuidance(){
+  var startEl = document.getElementById('startingRecommendation');
+  var benchEl = document.getElementById('benchmarkCheck');
+  var scenEl = document.getElementById('scenarioCompare');
+  var scenNoteEl = document.getElementById('scenarioNote');
+  if(!benchEl || !scenEl || !startEl) return;
+
+  var rec = computeRecommendedDebtPayment();
+  if(rec.income <= 0){
+    startEl.innerHTML = '<div class="mini-note">Add your paycheck amount above to see a suggested starting point.</div>';
+  } else if(rec.tight){
+    startEl.innerHTML =
+      '<div class="mini-note" style="color:#c0392b; font-weight:600;">Your cards\' minimum payments (' + fmtMoney(rec.perPeriod) + '/' + (state.debtFrequency==='weekly'?'wk':'2wk') + ') already take up more than what\'s left after your expenses. It may be worth revisiting your expenses, or looking into free nonprofit credit counseling for options.</div>';
+  } else {
+    startEl.innerHTML =
+      '<div class="recommend-line" style="font-size:1.1rem;">Starting point to consider: ' + fmtMoney(rec.perPeriod) + ' / ' + (state.debtFrequency==='weekly'?'week':'period') + '</div>' +
+      '<div class="mini-note">Based on covering your minimum payments and, where there\'s room, aiming for around 20% of your income toward debt — a commonly cited starting guideline — while still leaving you breathing room.</div>' +
+      '<button class="add-btn" style="margin-top:8px;" onclick="useRecommendedDebtAmount(' + rec.perPeriod + ')">Use this amount</button>';
+  }
+
+  var current = num(state.totalDebtPayment);
+  var gf = computeGuiltFree();
+  var ratio = gf.income > 0 ? (gf.monthlyDebtPayment / gf.income * 100) : 0;
+
+  if(current <= 0){
+    benchEl.innerHTML = '<div class="mini-note">Enter an amount in Debt Payment Plan above (or use the suggestion above) to see how it compares to common guidelines.</div>';
+  } else {
+    var tier, pillColor;
+    if(ratio < 15){
+      tier = 'Light — your debt payments are a small share of your income by common guidelines.';
+      pillColor = '#3e8e5a';
+    } else if(ratio < 20){
+      tier = 'Healthy — this is right around what many budgeting guidelines consider a comfortable range.';
+      pillColor = '#3e8e5a';
+    } else if(ratio < 36){
+      tier = 'On the higher side — common guidelines suggest keeping non-mortgage debt under about 20% of income. You\'re above that, but still within typical lender ceilings.';
+      pillColor = '#d9a441';
+    } else {
+      tier = 'High — this is above what most guidelines consider comfortable. A free nonprofit credit counselor could help you find some breathing room.';
+      pillColor = '#c0392b';
+    }
+    benchEl.innerHTML =
+      '<div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">' +
+        '<div style="font-size:1.4rem; font-weight:800; color:' + pillColor + ';">' + ratio.toFixed(0) + '%</div>' +
+        '<div class="mini-note" style="margin:0;">of your monthly income currently goes to debt payments</div>' +
+      '</div>' +
+      '<div class="mini-note" style="margin-top:6px; color:' + pillColor + '; font-weight:600;">' + tier + '</div>';
+  }
+
+  if(current <= 0){
+    scenNoteEl.textContent = 'Once you enter an amount above, you\'ll see how it stacks up against nearby options here.';
+    scenEl.innerHTML = '';
+    return;
+  }
+  scenNoteEl.textContent = '';
+
+  var totalMin = totalMinPayments();
+  var scenarios = [
+    { label: 'Minimums Only', amt: totalMin },
+    { label: 'Your Amount', amt: current },
+    { label: '+$100 / period', amt: current + 100 },
+    { label: '+$200 / period', amt: current + 200 }
+  ];
+
+  var html = '';
+  scenarios.forEach(function(s){
+    var sim = simulateSnowball(true, s.amt);
+    var maxDate = null, totalInt = 0;
+    sim.cards.forEach(function(c){
+      if(c.payoffDate && (!maxDate || c.payoffDate > maxDate)) maxDate = c.payoffDate;
+      totalInt += c.totalInterest;
+    });
+    var gfOverride = computeGuiltFreeWithOverride(s.amt);
+    var perCheck = gfOverride.guiltFree * 12 / payPeriodsPerYear(state.paycheckFrequency);
+
+    html += '<div class="scenario-card">' +
+      '<div class="scenario-head"><span>' + s.label + '</span><span class="scenario-amt">' + fmtMoney(s.amt) + '/' + (state.debtFrequency==='weekly'?'wk':'2wk') + '</span></div>' +
+      '<div class="payment-card-grid" style="margin-top:8px;">' +
+        '<div><div class="pcg-label">Paid Off By</div><div class="pcg-val">' + fmtDate(maxDate) + '</div></div>' +
+        '<div><div class="pcg-label">Total Interest</div><div class="pcg-val">' + fmtMoney(totalInt) + '</div></div>' +
+        '<div><div class="pcg-label">Guilt-Free / ' + (state.paycheckFrequency==='weekly'?'wk':'check') + '</div><div class="pcg-val">' + fmtMoney(perCheck) + '</div></div>' +
+      '</div>' +
+    '</div>';
+  });
+  scenEl.innerHTML = html;
+}
+
 // ---------- RENDER (structural) ----------
+
+function toggleCollapse(key){
+  var body = document.getElementById('body-' + key);
+  var chev = document.getElementById('chev-' + key);
+  if(!body) return;
+  var hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  if(chev) chev.classList.toggle('collapsed', !hidden);
+}
 
 function renderInputs(){
   document.getElementById('paycheckAmount').value = state.paycheckAmount || '';
   document.getElementById('extraIncome').value = state.extraIncome || '';
+  document.getElementById('nextPaycheckDate').value = state.nextPaycheckDate || '';
   document.getElementById('totalDebtPayment').value = state.totalDebtPayment || '';
   document.getElementById('planStartDate').value = state.planStartDate || '';
 
@@ -661,7 +967,14 @@ function setDebtFrequency(val){
   renderToggle('debtFreqToggle', val);
   saveState();
   compute();
-  renderCardList(); // recur-box "per period" labels depend on debt frequency
+  renderCardList();
+}
+
+function updateDueDayVisibility(id){
+  var e = state.expenses.find(function(x){ return x.id === id; });
+  if(!e) return;
+  var box = document.querySelector('[data-dueday-field="' + id + '"]');
+  if(box) box.style.display = (e.chargedTo || e.includeInPlan) ? 'block' : 'none';
 }
 
 function renderExpenseList(){
@@ -676,18 +989,21 @@ function renderExpenseList(){
         return '<option value="'+c.id+'"'+(e.chargedTo===c.id?' selected':'')+'>'+escapeHtml(c.name)+'</option>';
       }).join('');
 
+    var showDueDay = !!(e.chargedTo || e.includeInPlan);
+
     row.innerHTML =
       '<div class="exp-row-main">' +
         '<div><label>Name</label><input type="text" value="'+escapeHtml(e.name)+'" data-id="'+e.id+'" data-field="name" oninput="onExpenseChange(this)"></div>' +
-        '<div><label>Amount / month</label><input type="number" value="'+(e.amount||'')+'" data-id="'+e.id+'" data-field="amount" oninput="onExpenseChange(this)"></div>' +
+        '<div><label>Amount / month</label><input type="number" inputmode="decimal" value="'+(e.amount||'')+'" data-id="'+e.id+'" data-field="amount" oninput="onExpenseChange(this)"></div>' +
         '<button class="remove-btn" onclick="removeExpense(\''+e.id+'\')">✕</button>' +
       '</div>' +
       '<label style="margin-top:8px;"><input type="checkbox" data-id="'+e.id+'" data-field="isCardCharge" '+(e.chargedTo?'checked':'')+' onchange="onExpenseChange(this)"> This is a recurring charge on a credit card (not paid from checking)</label>' +
       '<div class="exp-card-field" data-card-field="'+e.id+'" style="display:'+(e.chargedTo?'block':'none')+';">' +
-        '<div class="row">' +
-          '<div><label>Which card?</label><select data-id="'+e.id+'" data-field="chargedTo" onchange="onExpenseChange(this)">'+cardOptions+'</select></div>' +
-          '<div><label>Due day (1–31)</label><input type="number" min="1" max="31" value="'+(e.dueDay||'')+'" data-id="'+e.id+'" data-field="dueDay" oninput="onExpenseChange(this)"></div>' +
-        '</div>' +
+        '<label>Which card?</label><select data-id="'+e.id+'" data-field="chargedTo" onchange="onExpenseChange(this)">'+cardOptions+'</select>' +
+      '</div>' +
+      '<label style="margin-top:6px;"><input type="checkbox" data-id="'+e.id+'" data-field="includeInPlan" '+(e.includeInPlan?'checked':'')+' onchange="onExpenseChange(this)"> Include in per-paycheck plan</label>' +
+      '<div class="exp-card-field" data-dueday-field="'+e.id+'" style="display:'+(showDueDay?'block':'none')+';">' +
+        '<label>Due day (1–31, optional)</label><input type="number" inputmode="numeric" min="1" max="31" value="'+(e.dueDay||'')+'" data-id="'+e.id+'" data-field="dueDay" oninput="onExpenseChange(this)">' +
       '</div>';
     el.appendChild(row);
   });
@@ -713,10 +1029,6 @@ function renderCardList(){
 
       var wc = lastWithCharges ? lastWithCharges.cards.find(function(x){ return x.id===c.id; }) : null;
       var nextPeriodInfo = wc && wc.periods && wc.periods.length ? wc.periods[0] : null;
-      // Debt portion = what the plan actually applies to this card (min + any extra).
-      // Subscription portion = this period's recurring charge, shown separately since
-      // it's not part of the debt payment plan pool -- it's money you already set aside
-      // in Monthly Expenses, this just tells you how much of it to route to the card.
       var debtPortion = nextPeriodInfo ? (nextPeriodInfo.minPaid + nextPeriodInfo.extraPaid) : num(c.minPayment);
       var subPortion = nextPeriodInfo ? (nextPeriodInfo.charge||0) : perPeriod;
       var recommend = debtPortion + subPortion;
@@ -738,20 +1050,20 @@ function renderCardList(){
       '<div class="row" style="align-items:center; justify-content:space-between;"><h3 style="margin:0;font-size:1rem;color:var(--teal-dark);">'+(c.name?escapeHtml(c.name):'New Card')+'</h3><button class="remove-btn" onclick="removeCard(\''+c.id+'\')">✕ Remove</button></div>' +
       '<label>Name</label><input type="text" value="'+escapeHtml(c.name)+'" data-id="'+c.id+'" data-field="name" oninput="onCardChange(this)">' +
       '<div class="row">' +
-        '<div><label>Balance</label><input type="number" value="'+(c.balance||'')+'" data-id="'+c.id+'" data-field="balance" oninput="onCardChange(this)"></div>' +
-        '<div><label>APR %</label><input type="number" value="'+(c.apr||'')+'" data-id="'+c.id+'" data-field="apr" oninput="onCardChange(this)"></div>' +
+        '<div><label>Balance</label><input type="number" inputmode="decimal" value="'+(c.balance||'')+'" data-id="'+c.id+'" data-field="balance" oninput="onCardChange(this)"></div>' +
+        '<div><label>APR %</label><input type="number" inputmode="decimal" value="'+(c.apr||'')+'" data-id="'+c.id+'" data-field="apr" oninput="onCardChange(this)"></div>' +
       '</div>' +
       '<div class="row">' +
-        '<div><label>Min payment</label><input type="number" value="'+(c.minPayment||'')+'" data-id="'+c.id+'" data-field="minPayment" oninput="onCardChange(this)"></div>' +
+        '<div><label>Min payment</label><input type="number" inputmode="decimal" value="'+(c.minPayment||'')+'" data-id="'+c.id+'" data-field="minPayment" oninput="onCardChange(this)"></div>' +
         '<div><label>Start date</label><input type="date" value="'+(c.startDate||'')+'" data-id="'+c.id+'" data-field="startDate" onchange="onCardChange(this)"></div>' +
       '</div>' +
       recurHtml +
       '<div class="mini-note" style="margin-top:10px;">Current balance: <b>'+fmtMoney(cardCurrentBalance(c))+'</b></div>' +
       '<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:.82rem;font-weight:700;color:var(--teal-dark);">📝 Payment log</summary>' +
-        '<table class="payment-log-table"><thead><tr><th>Date</th><th>Amount</th><th></th></tr></thead><tbody>'+paymentRows+'</tbody></table>' +
+        '<div style="overflow-x:auto;"><table class="payment-log-table"><thead><tr><th>Date</th><th>Amount</th><th></th></tr></thead><tbody>'+paymentRows+'</tbody></table></div>' +
         '<div class="row" style="margin-top:8px;">' +
           '<div><label>Date</label><input type="date" id="logDate_'+c.id+'"></div>' +
-          '<div><label>Amount</label><input type="number" id="logAmt_'+c.id+'"></div>' +
+          '<div><label>Amount</label><input type="number" inputmode="decimal" id="logAmt_'+c.id+'"></div>' +
         '</div>' +
         '<button class="log-btn" onclick="logPayment(\''+c.id+'\')">Log payment</button>' +
       '</details>';
@@ -764,6 +1076,7 @@ function renderCardList(){
 function onFieldChange(){
   state.paycheckAmount = num(document.getElementById('paycheckAmount').value);
   state.extraIncome = num(document.getElementById('extraIncome').value);
+  state.nextPaycheckDate = document.getElementById('nextPaycheckDate').value;
   state.totalDebtPayment = num(document.getElementById('totalDebtPayment').value);
   state.planStartDate = document.getElementById('planStartDate').value;
   saveState();
@@ -783,6 +1096,10 @@ function onExpenseChange(input){
       e.chargedTo = '';
       if(box) box.style.display = 'none';
     }
+    updateDueDayVisibility(id);
+  } else if(field === 'includeInPlan'){
+    e.includeInPlan = input.checked;
+    updateDueDayVisibility(id);
   } else if(field === 'amount' || field === 'dueDay'){
     e[field] = input.value === '' ? '' : num(input.value);
   } else if(field === 'chargedTo'){
@@ -798,7 +1115,7 @@ function onExpenseChange(input){
 }
 
 function addExpense(){
-  state.expenses.push({id: uid(), name:'', amount:0, chargedTo:'', dueDay:''});
+  state.expenses.push({id: uid(), name:'', amount:0, chargedTo:'', dueDay:'', includeInPlan:false});
   saveState();
   renderExpenseList();
   compute();
@@ -824,7 +1141,7 @@ function onCardChange(input){
   saveState();
   compute();
   if(field === 'name'){
-    renderExpenseList(); // card names appear in the "which card" dropdown
+    renderExpenseList();
   }
 }
 
@@ -865,7 +1182,7 @@ function removePayment(cardId, paymentId){
   compute();
 }
 
-// ---------- EXPORT / IMPORT ----------
+// ---------- EXPORT ----------
 
 function exportToExcel(){
   try{
@@ -880,20 +1197,21 @@ function exportToExcel(){
       ['Paycheck Amount', state.paycheckAmount],
       ['Paycheck Frequency', state.paycheckFrequency === 'weekly' ? 'Weekly' : 'Biweekly'],
       ['Extra Monthly Income', state.extraIncome],
+      ['Next Paycheck Date', state.nextPaycheckDate],
       ['Total Debt Payment Per Period', state.totalDebtPayment],
       ['Debt Payment Frequency', state.debtFrequency === 'weekly' ? 'Weekly' : 'Biweekly'],
       ['Plan Start Date', state.planStartDate]
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(settings), 'Settings');
 
-    var expenseRows = [['Expense Name','Monthly Amount','Charged To Card','Due Day']];
+    var expenseRows = [['Expense Name','Monthly Amount','Charged To Card','Due Day','Include In Plan']];
     state.expenses.forEach(function(e){
       var cardName = '';
       if(e.chargedTo){
         var cc = state.cards.find(function(x){ return x.id === e.chargedTo; });
         if(cc) cardName = cc.name;
       }
-      expenseRows.push([e.name, e.amount, cardName, e.dueDay || '']);
+      expenseRows.push([e.name, e.amount, cardName, e.dueDay || '', e.includeInPlan ? 'Yes' : 'No']);
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expenseRows), 'Expenses');
 
@@ -910,6 +1228,140 @@ function exportToExcel(){
   }
 }
 
+// ---------- IMPORT ----------
+
+function cellVal(sheet, addr){
+  var c = sheet[addr];
+  if(!c) return '';
+  return c.v === undefined || c.v === null ? '' : c.v;
+}
+
+function toDateStr(v){
+  if(!v && v !== 0) return '';
+  if(v instanceof Date){
+    if(isNaN(v.getTime())) return '';
+    var y = v.getFullYear(), m = String(v.getMonth()+1).padStart(2,'0'), d = String(v.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + d;
+  }
+  if(typeof v === 'number'){
+    var epoch = new Date(Date.UTC(1899, 11, 30));
+    var dt = new Date(epoch.getTime() + v * 86400000);
+    return dt.toISOString().slice(0,10);
+  }
+  var s = String(v).trim();
+  var parsed = new Date(s);
+  if(!isNaN(parsed.getTime())) return parsed.toISOString().slice(0,10);
+  return '';
+}
+
+function toFreq(v){
+  var s = String(v||'').trim().toLowerCase();
+  return s === 'weekly' ? 'weekly' : 'biweekly';
+}
+
+function parseFullWorkbook(wb){
+  var budget = wb.Sheets['Budget'];
+  if(!budget) return null;
+
+  var newState = defaultState();
+  newState.paycheckAmount = num(cellVal(budget,'C6'));
+  newState.paycheckFrequency = toFreq(cellVal(budget,'C7'));
+  newState.extraIncome = num(cellVal(budget,'C8'));
+  newState.debtFrequency = toFreq(cellVal(budget,'C38'));
+  newState.totalDebtPayment = num(cellVal(budget,'C39'));
+  newState.planStartDate = toDateStr(cellVal(budget,'C40'));
+
+  var expenses = [];
+  for(var row = 14; row <= 33; row++){
+    var name = cellVal(budget, 'B'+row);
+    var amt = cellVal(budget, 'C'+row);
+    if(name && String(name).trim() !== ''){
+      expenses.push({id: uid(), name: String(name).trim(), amount: num(amt), chargedTo:'', dueDay:'', includeInPlan:false});
+    }
+  }
+  if(expenses.length) newState.expenses = expenses;
+
+  var cards = [];
+  for(var ci = 1; ci <= 14; ci++){
+    var sheetName = 'Card ' + ci;
+    var cs = wb.Sheets[sheetName];
+    if(!cs) continue;
+    var name = cellVal(cs,'C5');
+    if(!name || String(name).trim() === '') continue;
+    var newId = uid();
+    var payments = [];
+    for(var pr = 4; pr <= 43; pr++){
+      var amt2 = cellVal(cs, 'M'+pr);
+      if(amt2 && num(amt2) > 0){
+        payments.push({id: uid(), date: toDateStr(cellVal(cs,'L'+pr)) || '', amount: num(amt2)});
+      }
+    }
+    cards.push({
+      id: newId, name: String(name).trim(),
+      balance: num(cellVal(cs,'C6')), apr: num(cellVal(cs,'C7')),
+      minPayment: num(cellVal(cs,'C8')), startDate: toDateStr(cellVal(cs,'C9')),
+      payments: payments
+    });
+  }
+  if(cards.length) newState.cards = cards;
+
+  return {state: newState, summary: {
+    expenses: expenses.length, cards: cards.length,
+    payments: cards.reduce(function(s,c){ return s + c.payments.length; }, 0)
+  }, note: 'Card-charge tagging and per-paycheck-plan checkboxes aren\'t stored in the Excel Budget sheet, so you\'ll need to re-check those boxes here.'};
+}
+
+function parseOwnExport(wb){
+  var settingsSheet = wb.Sheets['Settings'];
+  if(!settingsSheet) return null;
+
+  var newState = defaultState();
+  var settingsRows = XLSX.utils.sheet_to_json(settingsSheet, {header:1});
+  var settingsMap = {};
+  settingsRows.slice(1).forEach(function(r){ if(r[0]) settingsMap[String(r[0]).trim()] = r[1]; });
+
+  newState.paycheckAmount = num(settingsMap['Paycheck Amount']);
+  newState.paycheckFrequency = toFreq(settingsMap['Paycheck Frequency']);
+  newState.extraIncome = num(settingsMap['Extra Monthly Income']);
+  newState.nextPaycheckDate = toDateStr(settingsMap['Next Paycheck Date']);
+  newState.totalDebtPayment = num(settingsMap['Total Debt Payment Per Period']);
+  newState.debtFrequency = toFreq(settingsMap['Debt Payment Frequency']);
+  newState.planStartDate = toDateStr(settingsMap['Plan Start Date']);
+
+  var cards = [];
+  var cardsSheet = wb.Sheets['Cards'];
+  var cardNameToId = {};
+  if(cardsSheet){
+    var cardRows = XLSX.utils.sheet_to_json(cardsSheet, {header:1});
+    cardRows.slice(1).forEach(function(r){
+      if(!r[0] || String(r[0]).trim() === '') return;
+      var id = uid();
+      cardNameToId[String(r[0]).trim()] = id;
+      cards.push({
+        id: id, name: String(r[0]).trim(), balance: num(r[1]), apr: num(r[2]),
+        minPayment: num(r[3]), startDate: toDateStr(r[4]), payments: []
+      });
+    });
+  }
+  if(cards.length) newState.cards = cards;
+
+  var expenses = [];
+  var expSheet = wb.Sheets['Expenses'];
+  if(expSheet){
+    var expRows = XLSX.utils.sheet_to_json(expSheet, {header:1});
+    expRows.slice(1).forEach(function(r){
+      if(!r[0] || String(r[0]).trim() === '') return;
+      var chargedTo = '';
+      if(r[2] && cardNameToId[String(r[2]).trim()]) chargedTo = cardNameToId[String(r[2]).trim()];
+      var includeInPlan = r[4] ? String(r[4]).trim().toLowerCase() === 'yes' : false;
+      expenses.push({id: uid(), name: String(r[0]).trim(), amount: num(r[1]), chargedTo: chargedTo, dueDay: r[3] || '', includeInPlan: includeInPlan});
+    });
+  }
+  if(expenses.length) newState.expenses = expenses;
+
+  return {state: newState, summary: {expenses: expenses.length, cards: cards.length, payments: 0}, note: ''};
+}
+
 function handleImportFile(event){
   try{
     var file = event.target.files[0];
@@ -922,12 +1374,33 @@ function handleImportFile(event){
     reader.onload = function(e){
       try{
         var data = new Uint8Array(e.target.result);
-        var wb = XLSX.read(data, {type:'array'});
-        showWarning('Import read the file successfully. Manual field mapping from this file type is limited in the HTML version — for full auto-import, use the Excel tracker\'s Import tab.');
+        var wb = XLSX.read(data, {type:'array', cellDates:true});
+
+        var result = parseFullWorkbook(wb) || parseOwnExport(wb);
+        if(!result){
+          showWarning('Couldn\'t recognize that file. Import either the full Debt_Payoff_Tracker.xlsx workbook, or a file exported from this page\'s Export button.');
+          return;
+        }
+        if(result.summary.cards === 0 && result.summary.expenses === 0){
+          showWarning('That file didn\'t have any card or expense data to import.');
+          return;
+        }
+
+        var msg = 'Import found ' + result.summary.cards + ' card(s), ' + result.summary.expenses + ' expense(s)' +
+          (result.summary.payments ? ', and ' + result.summary.payments + ' logged payment(s)' : '') +
+          '. This will replace your current data here. Continue?';
+        if(!confirm(msg)) return;
+
+        state = result.state;
+        saveState();
+        renderInputs();
+        compute();
+        showSuccess('Imported ' + result.summary.cards + ' card(s) and ' + result.summary.expenses + ' expense(s) successfully.' + (result.note ? ' ' + result.note : ''));
       }catch(err){
         console.error(err);
-        showWarning('Could not read that file — make sure it\'s a valid .xlsx export.');
+        showWarning('Could not read that file — make sure it\'s a valid .xlsx file.');
       }
+      event.target.value = '';
     };
     reader.readAsArrayBuffer(file);
   }catch(e){
