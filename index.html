@@ -859,30 +859,53 @@ function renderDebtGuidance(){
   var current = num(state.totalDebtPayment);
   var gf = computeGuiltFree();
   var ratio = gf.income > 0 ? (gf.monthlyDebtPayment / gf.income * 100) : 0;
+  var expRatio = gf.income > 0 ? (gf.totalExpenses / gf.income * 100) : 0;
+  var gfRatio = gf.income > 0 ? (gf.guiltFree / gf.income * 100) : 0;
 
-  if(current <= 0){
-    benchEl.innerHTML = '<div class="mini-note">Enter an amount in Debt Payment Plan above (or use the suggestion above) to see how it compares to common guidelines.</div>';
+  if(gf.income <= 0){
+    benchEl.innerHTML = '<div class="mini-note">Add your paycheck amount above to see this breakdown.</div>';
   } else {
-    var tier, pillColor;
-    if(ratio < 15){
-      tier = 'Light — your debt payments are a small share of your income by common guidelines.';
-      pillColor = '#3e8e5a';
+    var expColor = expRatio < 50 ? '#3e8e5a' : (expRatio < 70 ? '#d9a441' : '#c0392b');
+    var gfColor = gf.guiltFree < 0 ? '#c0392b' : '#3e8e5a';
+
+    var breakdownHtml =
+      '<div class="payment-card-grid" style="grid-template-columns:1fr 1fr 1fr;">' +
+        '<div><div class="pcg-label">Expenses</div><div class="pcg-val" style="font-size:1.7rem; color:' + expColor + ';">' + expRatio.toFixed(0) + '%</div></div>' +
+        '<div><div class="pcg-label">Debt Payments</div><div class="pcg-val" style="font-size:1.7rem;">' + ratio.toFixed(0) + '%</div></div>' +
+        '<div><div class="pcg-label">Guilt-Free</div><div class="pcg-val" style="font-size:1.7rem; color:' + gfColor + ';">' + gfRatio.toFixed(0) + '%</div></div>' +
+      '</div>';
+
+    var expNote;
+    if(expRatio < 50){ expNote = 'Expenses: a modest share of your income.'; }
+    else if(expRatio < 70){ expNote = 'Expenses: a fairly typical range, though this blends needs and wants together.'; }
+    else { expNote = 'Expenses: taking up most of your income, leaving less room for debt payments and guilt-free spending.'; }
+
+    var gfNote = gf.guiltFree < 0
+      ? 'You\'re currently spending more than you bring in — expenses plus debt payments exceed your income.'
+      : 'Guilt-free: ' + fmtMoney(gf.guiltFree) + ' left per month after expenses and debt payments.';
+
+    var debtNote, debtColor;
+    if(current <= 0){
+      debtNote = 'Enter an amount in Debt Payment Plan above (or use the suggestion above) to see how your debt payment compares to common guidelines.';
+      debtColor = '#6b7a79';
+    } else if(ratio < 15){
+      debtNote = 'Debt: light — a small share of your income by common guidelines.';
+      debtColor = '#3e8e5a';
     } else if(ratio < 20){
-      tier = 'Healthy — this is right around what many budgeting guidelines consider a comfortable range.';
-      pillColor = '#3e8e5a';
+      debtNote = 'Debt: healthy — right around what many budgeting guidelines consider comfortable.';
+      debtColor = '#3e8e5a';
     } else if(ratio < 36){
-      tier = 'On the higher side — common guidelines suggest keeping non-mortgage debt under about 20% of income. You\'re above that, but still within typical lender ceilings.';
-      pillColor = '#d9a441';
+      debtNote = 'Debt: on the higher side — common guidelines suggest keeping non-mortgage debt under about 20% of income. You\'re above that, but still within typical lender ceilings.';
+      debtColor = '#d9a441';
     } else {
-      tier = 'High — this is above what most guidelines consider comfortable. A free nonprofit credit counselor could help you find some breathing room.';
-      pillColor = '#c0392b';
+      debtNote = 'Debt: high — above what most guidelines consider comfortable. A free nonprofit credit counselor could help you find some breathing room.';
+      debtColor = '#c0392b';
     }
-    benchEl.innerHTML =
-      '<div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">' +
-        '<div style="font-size:1.4rem; font-weight:800; color:' + pillColor + ';">' + ratio.toFixed(0) + '%</div>' +
-        '<div class="mini-note" style="margin:0;">of your monthly income currently goes to debt payments</div>' +
-      '</div>' +
-      '<div class="mini-note" style="margin-top:6px; color:' + pillColor + '; font-weight:600;">' + tier + '</div>';
+
+    benchEl.innerHTML = breakdownHtml +
+      '<div class="mini-note" style="margin-top:8px;">' + expNote + '</div>' +
+      '<div class="mini-note" style="margin-top:2px; ' + (gf.guiltFree<0?'color:#c0392b;font-weight:600;':'') + '">' + gfNote + '</div>' +
+      '<div class="mini-note" style="margin-top:2px; color:' + debtColor + '; font-weight:600;">' + debtNote + '</div>';
   }
 
   if(current <= 0){
